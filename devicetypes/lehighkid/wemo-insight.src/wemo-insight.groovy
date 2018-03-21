@@ -16,7 +16,7 @@
  * Date: 2015-10-11
  */
  metadata {
- 	definition (name: "Wemo Insight Switch", namespace: "lehighkid", author: "SmartThings,mujica") {
+ 	definition (name: "Wemo Insight", namespace: "lehighkid", author: "SmartThings,mujica") {
         capability "Actuator"
         capability "Switch"
         capability "Polling"

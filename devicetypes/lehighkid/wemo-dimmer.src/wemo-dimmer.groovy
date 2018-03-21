@@ -17,7 +17,7 @@
  */
 metadata {
     // Automatically generated. Make future change here.
-    definition (name: "Wemo Dimmer Light Switch", namespace: "lehighkid", author: "kris2k2") {
+    definition (name: "Wemo Dimmer", namespace: "lehighkid", author: "kris2k2") {
 		capability "Switch Level"
         capability "Actuator"
         capability "Switch"

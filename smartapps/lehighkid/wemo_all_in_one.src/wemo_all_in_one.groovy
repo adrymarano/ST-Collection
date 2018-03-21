@@ -17,7 +17,7 @@
  *  Last Update : 2016-02-24
  */
 definition(
-    name: "Wemo All In One (Connect) Advanced",
+    name: "Wemo All In One",
     namespace: "lehighkid",
     author: "SmartThings,Ule,mujica",
     description: "Allows you to integrate your WeMo Switch and Wemo Motion sensor with SmartThings.",
@@ -196,7 +196,7 @@ def addSwitches() {
 			def namespace
 			switch (selectedSwitch.value.ssdpTerm){
 				case ~/.*lightswitch.*/: 
-					name = "Wemo Light Switch"
+					name = "Wemo Light"
                 	namespace = "lehighkid"
 					break
 				case ~/.*sensor.*/: 
@@ -208,11 +208,11 @@ def addSwitches() {
                 	namespace = "mujica"
 					break
 				case ~/.*dimmer.*/: 
-					name = "Wemo Dimmer Light Switch"
+					name = "Wemo Dimmer"
                 	namespace = "lehighkid"
 					break
 				case ~/.*insight.*/: 
-					name = "Wemo Insight Switch"
+					name = "Wemo Insight"
                 	namespace = "lehighkid"
 					break
 				case ~/.*maker.*/: 
