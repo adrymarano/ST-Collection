@@ -65,3 +65,17 @@ def on() {
 def off() {
 	push()
 }
+
+def initialize() {
+	state.msgReceived = now()
+    state.msgLastReceived = state.msgReceived
+}
+
+def installed() {
+	state.installedAt = now()
+    initialize()
+}
+
+def updated() {
+	state.updatedAt = now()
+}
