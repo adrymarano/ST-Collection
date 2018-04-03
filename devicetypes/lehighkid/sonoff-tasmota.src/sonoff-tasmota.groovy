@@ -1,0 +1,341 @@
+metadata {
+    definition(name: "Sonoff-Tasmota", namespace: "lehighkid", author: "Brett Sheleski") {
+		capability "Switch"
+		capability "Momentary"
+		capability "Polling"
+		capability "Refresh"
+    }
+
+	// UI tile definitions
+    tiles(scale: 2) {
+		multiAttributeTile(name:"switch", type: "generic", width: 6, height: 4, canChangeIcon: true){
+			tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
+				attributeState "on", label: '${name}', action: "momentary.push", icon: "st.switches.switch.on", backgroundColor: "#00A0DC"
+				attributeState "off", label: '${name}', action: "momentary.push", icon: "st.switches.switch.off", backgroundColor: "#ffffff"
+			}
+		}
+
+		standardTile("refresh", "device.switch", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
+			state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
+		}
+
+		main "switch"
+		details(["switch","refresh"])
+	}
+
+    preferences {
+		input(name: "ipAddress", type: "string", title: "IP Address", description: "IP Address of Sonoff", displayDuringSetup: true, required: true)
+		input(name: "port", type: "number", title: "Port", description: "Port", displayDuringSetup: true, required: true, defaultValue: 80)
+		
+		section("Sonoff Host") {
+			
+		}
+
+		section("Authentication") {
+			input(name: "username", type: "string", title: "Username", description: "Username", displayDuringSetup: false, required: false)
+			input(name: "password", type: "password", title: "Password", description: "Password", displayDuringSetup: false, required: false)
+		}
+    }
+}
+
+def parse(String description) {
+    log.debug "parse()"
+
+	def message = parseLanMessage(description);
+        
+    def messageJson = new groovy.json.JsonSlurper().parseText(message?.body)
+    
+	if (messageJson?.Status?.toString() != null) {
+		parseStatus(message.body);
+	}
+	else if (messageJson.POWER?.toString() != null) {
+		parseResult(message.body);
+	}
+}
+
+def parseStatus(String json){
+	log.debug "status: $json"
+
+	def status = new groovy.json.JsonSlurper().parseText(json).Status;
+    
+	def isOn = status.Power == 1;
+
+	setSwitchState(isOn);
+}
+
+def parseResult(String json){
+	log.debug "result: $json"
+
+	def result = new groovy.json.JsonSlurper().parseText(json);
+
+	def isOn = result.POWER == "ON";
+	
+	setSwitchState(isOn);
+}
+
+def setSwitchState(Boolean on){
+	log.debug "The switch is " + (on ? "ON" : "OFF")
+
+	sendEvent(name: "switch", value: on ? "on" : "off");
+}
+
+def push(){
+	log.debug "PUSH"
+	toggle(); // push is just an alias for toggle
+}
+
+def toggle(){
+	log.debug "TOGGLE"
+    sendCommand("Power", "Toggle");
+}
+
+def on(){
+	log.debug "ON"
+    sendCommand("Power", "On");
+}
+
+def off(){
+	log.debug "OFF"
+    sendCommand("Power", "Off");
+}
+
+def poll(){
+	log.debug "POLL"
+
+	requestStatus()
+
+}
+
+def refresh(){
+	log.debug "REFRESH"
+
+	requestStatus();
+}
+
+def requestStatus(){
+	log.debug "getStatus()"
+
+	def result = sendCommand("Status", null);
+
+	return result;
+}
+
+private def sendCommand(String command, String payload){
+
+    log.debug "sendCommand(${command}:${payload})"
+
+    def hosthex = convertIPtoHex(ipAddress);
+    def porthex = convertPortToHex(port);
+
+    device.deviceNetworkId = "$hosthex:$porthex";
+
+	def path = "/cm"
+
+	if (payload){
+		path += "?cmnd=${command}%20${payload}"
+	}
+	else{
+		path += "?cmnd=${command}"
+	}
+
+	if (username){
+		path += "&user=${username}"
+
+		if (password){
+			path += "&password=${password}"
+		}
+	}
+
+    def result = new physicalgraph.device.HubAction(
+        method: "GET",
+        path: path,
+        headers: [
+            HOST: "${ipAddress}:${port}"
+        ]
+    )
+
+    return result
+}
+
+private String convertIPtoHex(ipAddress) { 
+    String hex = ipAddress.tokenize( '.' ).collect {  String.format( '%02x', it.toInteger() ) }.join()
+    log.debug "IP address entered is $ipAddress and the converted hex code is $hex"
+    return hex
+
+}
+
+private String convertPortToHex(port) {
+	String hexport = port.toString().format('%04x', port.toInteger())
+    log.debug hexport
+    return hexport
+}metadata {
+    definition(name: "Sonoff-Tasmota", namespace: "BrettSheleski", author: "Brett Sheleski") {
+		capability "Switch"
+		capability "Momentary"
+		capability "Polling"
+		capability "Refresh"
+    }
+
+	// UI tile definitions
+    tiles(scale: 2) {
+		multiAttributeTile(name:"switch", type: "generic", width: 6, height: 4, canChangeIcon: true){
+			tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
+				attributeState "on", label: '${name}', action: "momentary.push", icon: "st.switches.switch.on", backgroundColor: "#00A0DC"
+				attributeState "off", label: '${name}', action: "momentary.push", icon: "st.switches.switch.off", backgroundColor: "#ffffff"
+			}
+		}
+
+		standardTile("refresh", "device.switch", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
+			state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
+		}
+
+		main "switch"
+		details(["switch","refresh"])
+	}
+
+    preferences {
+		input(name: "ipAddress", type: "string", title: "IP Address", description: "IP Address of Sonoff", displayDuringSetup: true, required: true)
+		input(name: "port", type: "number", title: "Port", description: "Port", displayDuringSetup: true, required: true, defaultValue: 80)
+		
+		section("Sonoff Host") {
+			
+		}
+
+		section("Authentication") {
+			input(name: "username", type: "string", title: "Username", description: "Username", displayDuringSetup: false, required: false)
+			input(name: "password", type: "password", title: "Password", description: "Password", displayDuringSetup: false, required: false)
+		}
+    }
+}
+
+def parse(String description) {
+    log.debug "parse()"
+
+	def message = parseLanMessage(description);
+        
+    def messageJson = new groovy.json.JsonSlurper().parseText(message?.body)
+    
+	if (messageJson?.Status?.toString() != null) {
+		parseStatus(message.body);
+	}
+	else if (messageJson.POWER?.toString() != null) {
+		parseResult(message.body);
+	}
+}
+
+def parseStatus(String json){
+	log.debug "status: $json"
+
+	def status = new groovy.json.JsonSlurper().parseText(json).Status;
+    
+	def isOn = status.Power == 1;
+
+	setSwitchState(isOn);
+}
+
+def parseResult(String json){
+	log.debug "result: $json"
+
+	def result = new groovy.json.JsonSlurper().parseText(json);
+
+	def isOn = result.POWER == "ON";
+	
+	setSwitchState(isOn);
+}
+
+def setSwitchState(Boolean on){
+	log.debug "The switch is " + (on ? "ON" : "OFF")
+
+	sendEvent(name: "switch", value: on ? "on" : "off");
+}
+
+def push(){
+	log.debug "PUSH"
+	toggle(); // push is just an alias for toggle
+}
+
+def toggle(){
+	log.debug "TOGGLE"
+    sendCommand("Power", "Toggle");
+}
+
+def on(){
+	log.debug "ON"
+    sendCommand("Power", "On");
+}
+
+def off(){
+	log.debug "OFF"
+    sendCommand("Power", "Off");
+}
+
+def poll(){
+	log.debug "POLL"
+
+	requestStatus()
+
+}
+
+def refresh(){
+	log.debug "REFRESH"
+
+	requestStatus();
+}
+
+def requestStatus(){
+	log.debug "getStatus()"
+
+	def result = sendCommand("Status", null);
+
+	return result;
+}
+
+private def sendCommand(String command, String payload){
+
+    log.debug "sendCommand(${command}:${payload})"
+
+    def hosthex = convertIPtoHex(ipAddress);
+    def porthex = convertPortToHex(port);
+
+    device.deviceNetworkId = "$hosthex:$porthex";
+
+	def path = "/cm"
+
+	if (payload){
+		path += "?cmnd=${command}%20${payload}"
+	}
+	else{
+		path += "?cmnd=${command}"
+	}
+
+	if (username){
+		path += "&user=${username}"
+
+		if (password){
+			path += "&password=${password}"
+		}
+	}
+
+    def result = new physicalgraph.device.HubAction(
+        method: "GET",
+        path: path,
+        headers: [
+            HOST: "${ipAddress}:${port}"
+        ]
+    )
+
+    return result
+}
+
+private String convertIPtoHex(ipAddress) { 
+    String hex = ipAddress.tokenize( '.' ).collect {  String.format( '%02x', it.toInteger() ) }.join()
+    log.debug "IP address entered is $ipAddress and the converted hex code is $hex"
+    return hex
+
+}
+
+private String convertPortToHex(port) {
+	String hexport = port.toString().format('%04x', port.toInteger())
+    log.debug hexport
+    return hexport
+}
