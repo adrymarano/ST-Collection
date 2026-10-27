@@ -117,16 +117,16 @@ ul.lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:colu
 .chip.pasado{color:var(--pasado); background:var(--pasado-bg)}
 .chip.plain{color:var(--ink-2); background:var(--surface-2)}
 
-/* línea de guarda */
-.linea{margin-top:9px; position:relative; height:16px}
-.track{position:absolute; inset:5px 0 auto; height:6px; border-radius:3px; background:var(--bar-track); overflow:hidden}
+/* Línea de guarda. Eje fijo de hoy a 2040 en todas las filas: con cada barra
+   en su propia escala no se pueden comparar dos vinos de un vistazo. */
+.linea{margin-top:9px; position:relative; height:8px}
+.track{position:absolute; inset:1px 0 auto; height:6px; border-radius:3px; background:var(--bar-track); overflow:hidden}
 .seg{position:absolute; top:0; height:100%}
+.seg.pre{background:var(--guardar); opacity:.32}
 .seg.vent{background:var(--pico); opacity:.85}
 .seg.post{background:var(--ya); opacity:.38}
-.hoy{position:absolute; top:0; width:2px; height:16px; background:var(--ink); border-radius:1px}
-.hoy::after{content:"hoy"; position:absolute; left:50%; transform:translateX(-50%); top:-11px;
-  font-size:9px; letter-spacing:.06em; color:var(--muted); font-family:var(--mono)}
-.linea-pies{display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:1px}
+.linea-pies{display:flex; justify-content:space-between; gap:8px; font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:3px}
+.linea-pies span:nth-child(2){flex:1 1 auto; min-width:0; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 
 /* filtros */
 .filtros{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
@@ -265,6 +265,10 @@ ul.lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:colu
 const HOY = new Date();
 const ANIO = HOY.getFullYear();
 
+// Eje común de todas las líneas de guarda.
+const EJE_INI = ANIO;
+const EJE_FIN = 2040;
+
 // Ventana de guarda de referencia, en años después de la cosecha,
 // expresada para un vino de gama "reserva". El escalón de gama la estira o la acorta.
 const VENTANAS = {
@@ -286,12 +290,17 @@ const GAMAS = {
 };
 const ES_RESERVA = {joven:false, roble:false, reserva:true, granReserva:true, icono:true};
 
+// Estar "dentro de la ventana" no alcanza: una cava joven cae entera en ese
+// cajón y no contesta nada. Lo que ordena es cuánto falta para que la ventana
+// se cierre, así que el tramo de adentro se parte en dos.
 const ESTADOS = {
-  ya:      {n:"Tomar ya",        cls:"ya",      color:"var(--ya)",      orden:0},
-  anio:    {n:"Tomar este año",  cls:"anio",    color:"var(--anio)",    orden:1},
-  pico:    {n:"En punto",        cls:"pico",    color:"var(--pico)",    orden:2},
-  guardar: {n:"Guardar",         cls:"guardar", color:"var(--guardar)", orden:3},
-  pasado:  {n:"Posiblemente pasado", cls:"pasado", color:"var(--pasado)", orden:-1}
+  ya:      {n:"Tomar ya",       tile:"Tomar ya",   cls:"ya",      color:"var(--ya)",      orden:0},
+  anio:    {n:"Tomar este año", tile:"Este año",   cls:"anio",    color:"var(--anio)",    orden:1},
+  pronto:  {n:"Abrir primero",  tile:"Abrir primero", cls:"anio", color:"var(--anio)",    orden:2},
+  pico:    {n:"Con tiempo",     tile:"Con tiempo", cls:"pico",    color:"var(--pico)",    orden:3},
+  guardar: {n:"Guardar",        tile:"Guardar",    cls:"guardar", color:"var(--guardar)", orden:4},
+  sinDatos:{n:"Falta la añada", tile:"Sin añada",  cls:"pasado",  color:"var(--pasado)",  orden:5},
+  pasado:  {n:"Posiblemente pasado", tile:"Pasados", cls:"pasado", color:"var(--pasado)", orden:-1}
 };
 
 const BANDAS = [
@@ -370,12 +379,14 @@ function ventana(v){
 
 function estado(v){
   const w = ventana(v);
-  if(!w) return {k:"pico", w:null, faltan:0};
-  if(ANIO > w.hasta + 2) return {k:"pasado", w, faltan:0};
-  if(ANIO >= w.hasta)    return {k:"ya", w, faltan:0};
-  if(ANIO >= w.hasta-1)  return {k:"anio", w, faltan:0};
-  if(ANIO < w.desde)     return {k:"guardar", w, faltan:w.desde-ANIO};
-  return {k:"pico", w, faltan:0};
+  if(!w) return {k:"sinDatos", w:null, faltan:0, restan:0};
+  if(ANIO > w.hasta + 2) return {k:"pasado", w, faltan:0, restan:0};
+  if(ANIO >= w.hasta)    return {k:"ya", w, faltan:0, restan:0};
+  if(ANIO < w.desde)     return {k:"guardar", w, faltan:w.desde-ANIO, restan:w.hasta-ANIO};
+  const restan = w.hasta - ANIO;
+  if(restan === 1) return {k:"anio", w, faltan:0, restan};
+  if(restan <= 3)  return {k:"pronto", w, faltan:0, restan};
+  return {k:"pico", w, faltan:0, restan};
 }
 
 function banda(v, cfg){
@@ -410,26 +421,27 @@ function ordenar(lista, modo){
 
 function chipEstado(e){
   const d = ESTADOS[e.k];
-  const extra = e.k==="guardar" ? ` ${e.faltan} ${plural(e.faltan,"año")}` : "";
+  const extra = e.k==="guardar" ? ` ${e.faltan} ${plural(e.faltan,"año")}`
+    : (e.restan ? ` · cierra en ${e.restan} ${plural(e.restan,"año")}` : "");
   return `<span class="chip ${d.cls}"><span class="dot"></span>${esc(d.n)}${extra}</span>`;
 }
 
 function lineaGuarda(v){
   const e = estado(v);
-  if(!e.w || !v.anada) return "";
-  const ini = +v.anada;
-  const fin = Math.max(e.w.hasta + 2, ANIO + 1);
-  const span = Math.max(1, fin - ini);
-  const pct = y => Math.max(0, Math.min(100, ((y - ini) / span) * 100));
-  const a = pct(e.w.desde), b = pct(e.w.hasta), h = pct(ANIO);
+  if(!e.w) return "";
+  const span = EJE_FIN - EJE_INI;
+  const pct = y => Math.max(0, Math.min(100, ((y - EJE_INI) / span) * 100));
+  const p = pct(e.w.desde);                        // dónde se abre la ventana
+  const a = pct(Math.max(e.w.desde, EJE_INI));     // tramo bebible que queda
+  const b = pct(e.w.hasta);
   return `<div class="linea" title="Ventana de guarda ${e.w.desde}–${e.w.hasta}">
     <div class="track">
-      <span class="seg vent" style="left:${a.toFixed(1)}%; width:${Math.max(1.5,b-a).toFixed(1)}%"></span>
+      ${e.w.desde > EJE_INI ? `<span class="seg pre" style="left:0; width:${p.toFixed(1)}%"></span>` : ""}
+      ${b > a ? `<span class="seg vent" style="left:${a.toFixed(1)}%; width:${Math.max(1.5,b-a).toFixed(1)}%"></span>` : ""}
       <span class="seg post" style="left:${b.toFixed(1)}%; width:${Math.max(0,100-b).toFixed(1)}%"></span>
     </div>
-    <span class="hoy" style="left:calc(${h.toFixed(1)}% - 1px)"></span>
   </div>
-  <div class="linea-pies"><span>${ini}</span><span>ventana ${e.w.desde}–${e.w.hasta}${e.w.propia?"":" · estimada"}</span><span>${fin}</span></div>`;
+  <div class="linea-pies"><span>hoy ${EJE_INI}</span><span>ventana ${e.w.desde}–${e.w.hasta}${e.w.propia?"":" · estimada"}</span><span>${EJE_FIN}</span></div>`;
 }
 
 function fila(v, opts){
@@ -490,26 +502,46 @@ function renderTomar(){
   if(!S.listo){ el.innerHTML = `<p class="lede"><span class="cargando"></span>Abriendo la cava…</p>`; return; }
   if(!S.vinos.length){ el.innerHTML = vacio("La cava está vacía","Sacale una foto a la etiqueta de un vino y lo cargo con bodega, añada, varietal, precio estimado y ventana de guarda."); return; }
 
-  const porEstado = {ya:[], anio:[], pico:[], guardar:[], pasado:[]};
+  const ORDEN_G = ["ya","anio","pronto","pico","guardar","sinDatos","pasado"];
+  const porEstado = {};
+  for(const k of ORDEN_G) porEstado[k] = [];
   for(const v of S.vinos) porEstado[estado(v).k].push(v);
 
-  const bot = k => porEstado[k].reduce((s,v)=>s+cant(v),0);
-  const tiles = `<div class="tiles">
-    ${[["ya","Tomar ya"],["anio","Este año"],["pico","En punto"],["guardar","Guardar"]].map(([k,n])=>`
-      <div class="tile"><div class="k">${n}</div>
-        <div class="v" style="color:${ESTADOS[k].color}">${bot(k)}</div>
-        <div class="n">${porEstado[k].length} ${plural(porEstado[k].length,"etiqueta")}</div></div>`).join("")}
+  // Los grupos de abajo contestan qué hacer con cada vino, y es normal que
+  // varios queden vacíos. Estos cuadros miden cuánto tiempo queda, que es lo
+  // que de verdad reparte una cava joven.
+  const HORIZ = [
+    {n:"Ya vencidos",    c:"var(--ya)",      t:r=>r!==null&&r<=0},
+    {n:"2 años o menos", c:"var(--anio)",    t:r=>r!==null&&r>=1&&r<=2},
+    {n:"3 a 5 años",     c:"var(--pico)",    t:r=>r!==null&&r>=3&&r<=5},
+    {n:"6 a 10 años",    c:"var(--guardar)", t:r=>r!==null&&r>=6&&r<=10},
+    {n:"Más de 10 años", c:"var(--accent)",  t:r=>r!==null&&r>10},
+    {n:"Sin añada",      c:"var(--pasado)",  t:r=>r===null}
+  ];
+  const restaDe = v => { const w = ventana(v); return w ? w.hasta - ANIO : null; };
+  const tiles = `
+  <div class="grupo-h"><h2>Cuánto tiempo hay</h2>
+    <span class="cnt">ventana que queda, contada desde hoy</span><span class="rule"></span></div>
+  <div class="tiles">
+    ${HORIZ.map(h=>{
+      const l = S.vinos.filter(v=>h.t(restaDe(v)));
+      return `<div class="tile"><div class="k">${esc(h.n)}</div>
+        <div class="v" style="color:${h.c}">${l.reduce((s,v)=>s+cant(v),0)}</div>
+        <div class="n">${l.length} ${plural(l.length,"etiqueta")}</div></div>`;
+    }).join("")}
   </div>`;
 
   const notas = {
     ya:"Llegaron al final de su ventana. Abrilos en las próximas semanas.",
     anio:"Les queda cerca de un año de buena forma. Programalos.",
-    pico:"Están dentro de su mejor momento: podés abrirlos o esperar un poco más.",
+    pronto:"Su ventana se cierra en dos o tres años. De todo lo que ya está listo, empezá por acá.",
+    pico:"Dentro de su ventana y con cuatro años o más por delante. No hay apuro.",
     guardar:"Todavía no entraron en su ventana. Guardalos los años que indica cada ficha.",
+    sinDatos:"Sin añada no puedo calcular la ventana. Abrí la ficha y completala.",
     pasado:"Pasaron su ventana por más de dos años. Pueden estar bien igual, pero abrilos sin expectativas."
   };
 
-  const grupos = ["ya","anio","pico","guardar","pasado"].map(k=>{
+  const grupos = ORDEN_G.map(k=>{
     const l = porEstado[k];
     if(!l.length) return "";
     const ord = k==="guardar"
@@ -520,11 +552,11 @@ function renderTomar(){
         <span class="cnt">${ord.length} ${plural(ord.length,"etiqueta")} · ${ord.reduce((s,v)=>s+cant(v),0)} ${plural(ord.reduce((s,v)=>s+cant(v),0),"botella")}</span>
         <span class="rule"></span></div>
       <p class="grupo-nota">${esc(notas[k])}</p>
-      <ul class="lista">${ord.map(v=>fila(v,{sinChip:k!=="guardar"})).join("")}</ul>
+      <ul class="lista">${ord.map(v=>fila(v,{sinChip:["ya","anio","sinDatos","pasado"].includes(k)})).join("")}</ul>
     </div>`;
   }).join("");
 
-  el.innerHTML = `<p class="lede">Ordenado por urgencia. La ventana de guarda sale del varietal, la gama y la añada; si cargaste una ventana a mano, mando esa.</p>${tiles}${grupos}`;
+  el.innerHTML = `<p class="lede">Arriba, cuánto tiempo te queda. Abajo, qué hacer con cada vino: dentro de cada grupo va primero el que cierra antes, y los grupos sin nada no aparecen. Todas las barras usan la misma escala, de hoy a ${EJE_FIN} — azul es la espera, verde la ventana, rojo lo que viene después.</p>${tiles}${grupos}`;
 }
 
 function renderCava(){
