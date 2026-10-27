@@ -82,6 +82,12 @@ section[hidden]{display:none !important}
 .tile .k{font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted)}
 .tile .v{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:23px; line-height:1.2; margin-top:4px}
 .tile .n{font-size:12px; color:var(--muted); margin-top:2px}
+.tile .k,.tile .v,.tile .n{display:block}
+button.tile{font:inherit; color:inherit; text-align:left; width:100%; cursor:pointer}
+button.tile:hover:not(:disabled){border-color:var(--line-2); background:var(--surface-2)}
+button.tile:disabled{cursor:default; opacity:.55}
+button.chip{border:0; font:inherit; cursor:pointer}
+button.chip:hover{background:var(--line)}
 
 .grupo{margin-bottom:26px}
 .grupo-h{display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap}
@@ -91,12 +97,15 @@ section[hidden]{display:none !important}
 .grupo-nota{font-size:13px; color:var(--muted); margin:-4px 0 10px; max-width:62ch}
 
 ul.lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
-.fila{display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:start; width:100%; text-align:left;
+.fila{display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:12px; align-items:start; width:100%; text-align:left;
   background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--borde,var(--line));
   border-radius:var(--r); padding:11px 13px}
 .fila:hover{border-color:var(--line-2); border-left-color:var(--borde,var(--line-2))}
-.thumb{width:40px; height:54px; border-radius:4px; object-fit:cover; background:var(--surface-2); border:1px solid var(--line)}
-.thumb.ph{display:grid; place-items:center; font-family:var(--display); font-size:17px; color:var(--muted)}
+/* min-width fija: sin ella la columna se comprime cuando el chip de estado
+   es largo, y la botella queda en una astilla ilegible. */
+.thumb{width:54px; min-width:54px; height:72px; border-radius:6px; object-fit:cover; object-position:center;
+  background:var(--surface-2); border:1px solid var(--line)}
+.thumb.ph{display:grid; place-items:center; font-family:var(--display); font-size:21px; color:var(--muted)}
 .fila .mid{min-width:0}
 .nom{font-weight:600; font-size:15px; line-height:1.3}
 .nom .et{font-family:var(--display); font-weight:600}
@@ -119,8 +128,12 @@ ul.lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:colu
 
 /* Línea de guarda. Eje fijo de hoy a 2040 en todas las filas: con cada barra
    en su propia escala no se pueden comparar dos vinos de un vistazo. */
-.linea{margin-top:9px; position:relative; height:8px}
-.track{position:absolute; inset:1px 0 auto; height:6px; border-radius:3px; background:var(--bar-track); overflow:hidden}
+.linea{margin-top:13px; position:relative; height:24px}
+.track{position:absolute; inset:15px 0 auto; height:6px; border-radius:3px; background:var(--bar-track); overflow:hidden}
+.marca{position:absolute; top:0; font-family:var(--mono); font-size:10.5px; line-height:1; font-weight:500;
+  white-space:nowrap; color:var(--ink)}
+.marca.abre{color:var(--ink-2)}
+.tick{position:absolute; top:12px; width:2px; height:12px; border-radius:1px; background:var(--ink); opacity:.5}
 .seg{position:absolute; top:0; height:100%}
 .seg.pre{background:var(--guardar); opacity:.32}
 .seg.vent{background:var(--pico); opacity:.85}
@@ -224,8 +237,9 @@ ul.lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:colu
   padding:9px 16px; border-radius:999px; font-size:13.5px; font-weight:500; box-shadow:var(--shadow); max-width:90vw}
 @media (max-width:460px){
   .campos{grid-template-columns:1fr}
-  .fila{grid-template-columns:auto 1fr; }
-  .fila .right{grid-column:2; flex-direction:row; align-items:center; gap:10px; justify-content:flex-start}
+  .fila{grid-template-columns:auto minmax(0,1fr)}
+  .fila .right{grid-column:2; flex-direction:row; align-items:center; flex-wrap:wrap;
+    gap:6px 10px; justify-content:flex-start; white-space:normal}
 }
 </style>
 
@@ -303,6 +317,17 @@ const ESTADOS = {
   pasado:  {n:"Posiblemente pasado", tile:"Pasados", cls:"pasado", color:"var(--pasado)", orden:-1}
 };
 
+// Tramos de horizonte: cuánta ventana le queda a una botella desde hoy.
+// Son los cuadros del resumen y, al tocarlos, el filtro del listado.
+const HORIZ = [
+  {k:"venc", n:"Ya vencidos",    c:"var(--ya)",      t:r=>r!==null&&r<=0},
+  {k:"h2",   n:"2 años o menos", c:"var(--anio)",    t:r=>r!==null&&r>=1&&r<=2},
+  {k:"h5",   n:"3 a 5 años",     c:"var(--pico)",    t:r=>r!==null&&r>=3&&r<=5},
+  {k:"h10",  n:"6 a 10 años",    c:"var(--guardar)", t:r=>r!==null&&r>=6&&r<=10},
+  {k:"hx",   n:"Más de 10 años", c:"var(--accent)",  t:r=>r!==null&&r>10},
+  {k:"sa",   n:"Sin añada",      c:"var(--pasado)",  t:r=>r===null}
+];
+
 const BANDAS = [
   {k:"bajo",    n:"Bajo"},
   {k:"medio",   n:"Medio"},
@@ -330,7 +355,7 @@ const CFG_DEF = {
 
 const S = {
   vinos:[], cfg:Object.assign({}, CFG_DEF), view:"tomar",
-  q:"", fEstado:"", fVar:"", fReserva:"", orden:"urgencia",
+  q:"", fEstado:"", fVar:"", fReserva:"", fHoriz:"", orden:"urgencia",
   listo:false, db:null, sample:null, assets:null, descargas:null,
   puedeImagenes:false, escribible:null
 };
@@ -398,6 +423,7 @@ function banda(v, cfg){
   return "muyAlto";
 }
 
+const restaDe = v => { const w = ventana(v); return w ? w.hasta - ANIO : null; };
 const esReserva = v => v.esReserva != null ? !!v.esReserva : !!ES_RESERVA[v.gama];
 const cant = v => Math.max(0, +v.cantidad || 0);
 const valor = v => (+v.precioArs || 0) * cant(v);
@@ -422,8 +448,10 @@ function ordenar(lista, modo){
 function chipEstado(e){
   const d = ESTADOS[e.k];
   const extra = e.k==="guardar" ? ` ${e.faltan} ${plural(e.faltan,"año")}`
-    : (e.restan ? ` · cierra en ${e.restan} ${plural(e.restan,"año")}` : "");
-  return `<span class="chip ${d.cls}"><span class="dot"></span>${esc(d.n)}${extra}</span>`;
+    : (e.restan ? ` · ${e.restan} ${plural(e.restan,"año")}` : "");
+  const tit = e.k==="guardar" ? `Le faltan ${e.faltan} ${plural(e.faltan,"año")} para entrar en su ventana`
+    : (e.restan ? `Su ventana se cierra en ${e.restan} ${plural(e.restan,"año")}` : esc(d.n));
+  return `<span class="chip ${d.cls}" title="${esc(tit)}"><span class="dot"></span>${esc(d.n)}${extra}</span>`;
 }
 
 function lineaGuarda(v){
@@ -433,15 +461,24 @@ function lineaGuarda(v){
   const pct = y => Math.max(0, Math.min(100, ((y - EJE_INI) / span) * 100));
   const p = pct(e.w.desde);                        // dónde se abre la ventana
   const a = pct(Math.max(e.w.desde, EJE_INI));     // tramo bebible que queda
-  const b = pct(e.w.hasta);
+  const b = pct(e.w.hasta);                        // el quiebre de verde a rojo
+  // El año va sobre el quiebre, pegado al borde cuando está en una punta
+  // para que no se salga de la fila.
+  const marca = (x, anio, cls) => {
+    const al = x < 10 ? "translateX(0)" : (x > 90 ? "translateX(-100%)" : "translateX(-50%)");
+    return `<span class="marca ${cls}" style="left:${x.toFixed(1)}%; transform:${al}">${anio}</span>
+      <span class="tick" style="left:calc(${x.toFixed(1)}% - 1px)"></span>`;
+  };
   return `<div class="linea" title="Ventana de guarda ${e.w.desde}–${e.w.hasta}">
     <div class="track">
       ${e.w.desde > EJE_INI ? `<span class="seg pre" style="left:0; width:${p.toFixed(1)}%"></span>` : ""}
       ${b > a ? `<span class="seg vent" style="left:${a.toFixed(1)}%; width:${Math.max(1.5,b-a).toFixed(1)}%"></span>` : ""}
       <span class="seg post" style="left:${b.toFixed(1)}%; width:${Math.max(0,100-b).toFixed(1)}%"></span>
     </div>
+    ${e.w.desde > EJE_INI ? marca(p, e.w.desde, "abre") : ""}
+    ${b > 0 && b < 100 ? marca(b, e.w.hasta, "cierra") : ""}
   </div>
-  <div class="linea-pies"><span>hoy ${EJE_INI}</span><span>ventana ${e.w.desde}–${e.w.hasta}${e.w.propia?"":" · estimada"}</span><span>${EJE_FIN}</span></div>`;
+  <div class="linea-pies"><span>hoy ${EJE_INI}</span><span>ventana ${e.w.propia?"cargada a mano":"estimada"}</span><span>${EJE_FIN}</span></div>`;
 }
 
 function fila(v, opts){
@@ -510,24 +547,16 @@ function renderTomar(){
   // Los grupos de abajo contestan qué hacer con cada vino, y es normal que
   // varios queden vacíos. Estos cuadros miden cuánto tiempo queda, que es lo
   // que de verdad reparte una cava joven.
-  const HORIZ = [
-    {n:"Ya vencidos",    c:"var(--ya)",      t:r=>r!==null&&r<=0},
-    {n:"2 años o menos", c:"var(--anio)",    t:r=>r!==null&&r>=1&&r<=2},
-    {n:"3 a 5 años",     c:"var(--pico)",    t:r=>r!==null&&r>=3&&r<=5},
-    {n:"6 a 10 años",    c:"var(--guardar)", t:r=>r!==null&&r>=6&&r<=10},
-    {n:"Más de 10 años", c:"var(--accent)",  t:r=>r!==null&&r>10},
-    {n:"Sin añada",      c:"var(--pasado)",  t:r=>r===null}
-  ];
-  const restaDe = v => { const w = ventana(v); return w ? w.hasta - ANIO : null; };
   const tiles = `
   <div class="grupo-h"><h2>Cuánto tiempo hay</h2>
-    <span class="cnt">ventana que queda, contada desde hoy</span><span class="rule"></span></div>
+    <span class="cnt">tocá un cuadro para ver cuáles son</span><span class="rule"></span></div>
   <div class="tiles">
     ${HORIZ.map(h=>{
       const l = S.vinos.filter(v=>h.t(restaDe(v)));
-      return `<div class="tile"><div class="k">${esc(h.n)}</div>
-        <div class="v" style="color:${h.c}">${l.reduce((s,v)=>s+cant(v),0)}</div>
-        <div class="n">${l.length} ${plural(l.length,"etiqueta")}</div></div>`;
+      return `<button class="tile" data-horiz="${h.k}" ${l.length?"":"disabled"}>
+        <span class="k">${esc(h.n)}</span>
+        <span class="v" style="color:${h.c}">${l.reduce((s,v)=>s+cant(v),0)}</span>
+        <span class="n">${l.length} ${plural(l.length,"etiqueta")}</span></button>`;
     }).join("")}
   </div>`;
 
@@ -569,6 +598,7 @@ function renderCava(){
   let lista = S.vinos.filter(v=>{
     if(q && !sinAcento([v.bodega,v.etiqueta,(v.varietales||[]).join(" "),v.region,v.anada].join(" ")).includes(q)) return false;
     if(S.fEstado && estado(v).k !== S.fEstado) return false;
+    if(S.fHoriz){ const h = HORIZ.find(x=>x.k===S.fHoriz); if(h && !h.t(restaDe(v))) return false; }
     if(S.fVar && !(v.varietales||[]).includes(S.fVar)) return false;
     if(S.fReserva === "si" && !esReserva(v)) return false;
     if(S.fReserva === "no" && esReserva(v)) return false;
@@ -579,6 +609,7 @@ function renderCava(){
 
   el.innerHTML = `
   <div class="filtros">
+    ${S.fHoriz ? `<button class="chip plain" data-clearhoriz="1">Ventana: ${esc((HORIZ.find(h=>h.k===S.fHoriz)||{}).n||"")} &times;</button>` : ""}
     <input type="search" id="f-q" placeholder="Buscar bodega, etiqueta, varietal…" value="${esc(S.q)}" aria-label="Buscar">
     <select id="f-estado" aria-label="Filtrar por momento">
       <option value="">Todo momento</option>
@@ -1160,6 +1191,14 @@ $("#btn-cfg").onclick = abrirAjustes;
 document.querySelector("main").addEventListener("click", e => {
   const ag = e.target.closest("[data-accion='agregar']");
   if(ag){ abrirAlta(); return; }
+  const th = e.target.closest("[data-horiz]");
+  if(th){
+    S.fHoriz = th.dataset.horiz; S.fEstado = ""; S.view = "cava";
+    render(); window.scrollTo({top:0, behavior:"instant"});
+    return;
+  }
+  const ch = e.target.closest("[data-clearhoriz]");
+  if(ch){ S.fHoriz = ""; render(); return; }
   const f = e.target.closest(".fila");
   if(f){
     const v = S.vinos.find(x=>x.id===f.dataset.id);
