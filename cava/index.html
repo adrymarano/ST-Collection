@@ -766,8 +766,9 @@ function leerForm(base){
 function montarFoto(el, foto){
   const caja = el.querySelector(".foto-caja");
   if(!caja) return;
-  const inp = caja.querySelector("input[type=file]");
+  const inps = Array.prototype.slice.call(caja.querySelectorAll("input[type=file]"));
   const bAdd = caja.querySelector("[data-foto]");
+  const bGal = caja.querySelector("[data-gal]");
   const txt = bAdd.querySelector(".txt");
   const bDel = caja.querySelector("[data-qfoto]");
   const pintar = () => {
@@ -775,16 +776,17 @@ function montarFoto(el, foto){
       ? `<img class="preview" src="${esc(foto.fotoUrl)}" alt="Foto del vino">`
       : `<div class="foto-vacia"><span class="em">◉</span><span>Sin foto todavía</span></div>`;
     bDel.hidden = !foto.fotoUrl;
-    inp.disabled = !S.assets;
+    bGal.hidden = !S.assets;
+    for(const i of inps) i.disabled = !S.assets;
     bAdd.classList.toggle("off", !S.assets);
     txt.textContent = !S.assets ? "No puedo guardar fotos acá"
-      : (foto.fotoUrl ? "Cambiar foto" : "Agregar foto");
+      : (foto.fotoUrl ? "Cambiar foto" : "Sacar foto");
   };
   pintar();
-  inp.onchange = async () => {
+  const subir = async inp => {
     const f = inp.files && inp.files[0];
     if(!f || !S.assets) return;
-    inp.disabled = true;
+    for(const i of inps) i.disabled = true;
     txt.innerHTML = `<span class="cargando"></span>Subiendo…`;
     try{
       const chico = await achicar(f, 900);
@@ -793,8 +795,9 @@ function montarFoto(el, foto){
       foto.fotoId = up.id; foto.fotoUrl = up.url;
       if(viejo && viejo !== up.id) S.assets.delete(viejo).catch(()=>{});
     }catch(e){ toast("No pude subir esa foto. Probá con un JPG o PNG."); }
-    finally{ inp.value = ""; inp.disabled = false; pintar(); }
+    finally{ for(const i of inps) i.value = ""; pintar(); }
   };
+  for(const i of inps) i.onchange = () => subir(i);
   bDel.onclick = () => {
     const viejo = foto.fotoId;
     foto.fotoId = null; foto.fotoUrl = null;
@@ -811,7 +814,8 @@ function abrirEditor(v, titulo){
     <div class="foto-caja">
       <div class="foto-vista"></div>
       <div class="foto-btns">
-        <label class="btn arch" data-foto="1"><span class="txt">Agregar foto</span><input type="file" accept="image/*"></label>
+        <label class="btn arch" data-foto="1"><span class="txt">Sacar foto</span><input type="file" accept="image/*" capture="environment"></label>
+        <label class="btn arch" data-gal="1"><span>Galería</span><input type="file" accept="image/*"></label>
         <button class="btn gh" data-qfoto="1" hidden>Quitar foto</button>
       </div>
     </div>
@@ -870,7 +874,13 @@ function abrirAlta(){
       <label class="opcion arch" data-foto="1">
         <span class="em">◉</span>
         <span><span class="tt">Sacarle una foto a la etiqueta</span>
-        <span class="ds">Leo bodega, varietal, añada y región, y estimo precio y ventana de guarda.</span></span>
+        <span class="ds">Abre la cámara. Leo bodega, varietal, añada y región, y estimo precio y ventana de guarda.</span></span>
+        <input type="file" accept="image/*" capture="environment">
+      </label>
+      <label class="opcion arch" data-gal="1">
+        <span class="em">▣</span>
+        <span><span class="tt">Elegir una foto de la galería</span>
+        <span class="ds">Si la etiqueta ya la tenés fotografiada, la leo igual.</span></span>
         <input type="file" accept="image/*">
       </label>` : `
       <button class="opcion" data-sinfoto="1">
@@ -889,8 +899,9 @@ function abrirAlta(){
     el.querySelector("[data-manual]").onclick = manual;
     const sin = el.querySelector("[data-sinfoto]");
     if(sin) sin.onclick = manual;
-    const inp = el.querySelector(".opcion input[type=file]");
-    if(inp) inp.onchange = () => { if(inp.files && inp.files[0]) leerEtiqueta(inp.files[0]); };
+    for(const inp of el.querySelectorAll(".opcion input[type=file]")){
+      inp.onchange = () => { if(inp.files && inp.files[0]) leerEtiqueta(inp.files[0]); };
+    }
   });
 }
 
