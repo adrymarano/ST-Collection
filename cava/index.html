@@ -192,7 +192,13 @@ ul.lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:colu
 .opcion .em{font-family:var(--display); font-size:22px; color:var(--accent); width:28px; text-align:center; flex:none}
 .opcion .tt{font-weight:600; font-size:15px}
 .opcion .ds{font-size:12.5px; color:var(--muted); margin-top:1px}
-.preview{width:100%; max-height:230px; object-fit:contain; border-radius:10px; background:var(--surface-2); margin-bottom:12px}
+.preview{width:100%; max-height:230px; object-fit:contain; border-radius:10px; background:var(--surface-2)}
+.foto-caja{display:flex; flex-direction:column; gap:9px; margin-bottom:15px}
+.foto-vista{min-width:0}
+.foto-vacia{display:grid; place-items:center; align-content:center; gap:3px; height:104px;
+  border:1px dashed var(--line-2); border-radius:10px; background:var(--bg); color:var(--muted); font-size:13px}
+.foto-vacia .em{font-family:var(--display); font-size:21px; color:var(--line-2); line-height:1}
+.foto-btns{display:flex; gap:8px; flex-wrap:wrap}
 .estado-msg{font-size:13.5px; color:var(--ink-2); padding:10px 12px; background:var(--surface-2); border-radius:8px; margin-bottom:12px}
 .estado-msg.err{color:var(--ya); background:var(--ya-bg)}
 .nota{font-size:12px; color:var(--muted); margin-top:10px}
@@ -718,11 +724,60 @@ function leerForm(base){
   return out;
 }
 
+// Foto del vino: se puede agregar, cambiar o quitar en cualquier momento,
+// sea el vino nuevo o uno que ya está en la cava.
+function montarFoto(el, foto){
+  const caja = el.querySelector(".foto-caja");
+  if(!caja) return;
+  const inp = caja.querySelector("input[type=file]");
+  const bAdd = caja.querySelector("[data-foto]");
+  const bDel = caja.querySelector("[data-qfoto]");
+  const pintar = () => {
+    caja.querySelector(".foto-vista").innerHTML = foto.fotoUrl
+      ? `<img class="preview" src="${esc(foto.fotoUrl)}" alt="Foto del vino">`
+      : `<div class="foto-vacia"><span class="em">◉</span><span>Sin foto todavía</span></div>`;
+    bDel.hidden = !foto.fotoUrl;
+    bAdd.disabled = !S.assets;
+    bAdd.textContent = !S.assets ? "No puedo guardar fotos acá"
+      : (foto.fotoUrl ? "Cambiar foto" : "Sacar o elegir foto");
+  };
+  pintar();
+  bAdd.onclick = () => { if(S.assets) inp.click(); };
+  inp.onchange = async () => {
+    const f = inp.files && inp.files[0];
+    if(!f || !S.assets) return;
+    bAdd.disabled = true;
+    bAdd.innerHTML = `<span class="cargando"></span>Subiendo…`;
+    try{
+      const chico = await achicar(f, 900);
+      const up = await S.assets.upload(chico);
+      const viejo = foto.fotoId;
+      foto.fotoId = up.id; foto.fotoUrl = up.url;
+      if(viejo && viejo !== up.id) S.assets.delete(viejo).catch(()=>{});
+    }catch(e){ toast("No pude subir esa foto"); }
+    finally{ inp.value = ""; pintar(); }
+  };
+  bDel.onclick = () => {
+    const viejo = foto.fotoId;
+    foto.fotoId = null; foto.fotoUrl = null;
+    if(viejo && S.assets) S.assets.delete(viejo).catch(()=>{});
+    pintar();
+    toast("Foto quitada. Guardá el vino para confirmarlo.");
+  };
+}
+
 function abrirEditor(v, titulo){
   const nuevo = !v.id;
   hoja(`
     <div class="hoja-h"><h2>${esc(titulo)}</h2><button class="icon-btn" data-x="1">Cerrar</button></div>
-    ${v.fotoUrl?`<img class="preview" src="${esc(v.fotoUrl)}" alt="Etiqueta">`:""}
+    <div class="foto-caja">
+      <div class="foto-vista"></div>
+      <div class="foto-btns">
+        <button class="btn" data-foto="1">Sacar o elegir foto</button>
+        <button class="btn gh" data-qfoto="1" hidden>Quitar foto</button>
+      </div>
+      <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
+    </div>
     ${v._aviso?`<div class="estado-msg">${esc(v._aviso)}</div>`:""}
     ${formHtml(v)}
     <div class="acciones">
@@ -732,9 +787,11 @@ function abrirEditor(v, titulo){
     </div>
     <p class="nota">Dejá las ventanas vacías y las calculo con el varietal, la gama y la añada. Si escribís un precio a mano, deja de ser estimación.</p>
   `, el => {
+    const foto = {fotoId: v.fotoId || null, fotoUrl: v.fotoUrl || null};
+    montarFoto(el, foto);
     el.querySelector("[data-x]").onclick = cerrar;
     el.querySelector("[data-g]").onclick = async () => {
-      const datos = leerForm(v);
+      const datos = Object.assign(leerForm(v), foto);
       if(!datos.bodega && !datos.etiqueta){ toast("Poné al menos la bodega o la etiqueta"); return; }
       await guardar(datos);
       cerrar();
@@ -861,7 +918,7 @@ async function leerEtiqueta(file){
     const acc = document.querySelector(".acciones");
     if(acc) acc.innerHTML = `<button class="btn pri full" id="r-manual">Cargarlo a mano</button><button class="btn gh" id="r-cerrar">Cerrar</button>`;
     const rm = document.querySelector("#r-manual");
-    if(rm) rm.onclick = () => abrirEditor({cantidad:1, tipo:"tinto", gama:"reserva", fotoUrl}, "Vino nuevo");
+    if(rm) rm.onclick = () => abrirEditor({cantidad:1, tipo:"tinto", gama:"reserva"}, "Vino nuevo");
     const rc = document.querySelector("#r-cerrar");
     if(rc) rc.onclick = cerrar;
     return;
@@ -873,7 +930,7 @@ async function leerEtiqueta(file){
     const acc = document.querySelector(".acciones");
     if(acc){
       acc.innerHTML = `<button class="btn pri full" id="r-manual">Cargarlo a mano</button><button class="btn gh" id="r-cerrar">Cerrar</button>`;
-      document.querySelector("#r-manual").onclick = () => abrirEditor({cantidad:1, tipo:"tinto", gama:"reserva", fotoUrl}, "Vino nuevo");
+      document.querySelector("#r-manual").onclick = () => abrirEditor({cantidad:1, tipo:"tinto", gama:"reserva"}, "Vino nuevo");
       document.querySelector("#r-cerrar").onclick = cerrar;
     }
     return;
@@ -882,7 +939,7 @@ async function leerEtiqueta(file){
   const paso = document.querySelector("#paso");
   if(paso) paso.innerHTML = `<span class="cargando"></span>Guardando la foto…`;
 
-  let fotoId = null, fotoFinal = fotoUrl;
+  let fotoId = null, fotoFinal = null;
   if(S.assets){
     try{
       const chico = await achicar(file, 900);
