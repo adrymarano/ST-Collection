@@ -1,0 +1,1080 @@
+<title>Cava Marano</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* Libro de bodega: cabecera fija con pestañas, columna única de registros;
+   cada vino lleva su propia línea de guarda con la marca de "hoy". */
+:root{
+  --bg:#F7F5F8; --surface:#FFFFFF; --surface-2:#F1EDF3; --ink:#1B1520; --ink-2:#574C60;
+  --muted:#7C7187; --line:#E3DCE9; --line-2:#CFC5D8;
+  --accent:#6E2B57; --accent-ink:#FFFFFF; --accent-soft:#F3E6EE;
+  --guardar:#2B55C0; --pico:#0E8A74; --anio:#A8780A; --ya:#BE1E45; --pasado:#7C7187;
+  --guardar-bg:#E8EDFB; --pico-bg:#E0F2EE; --anio-bg:#F7EFDC; --ya-bg:#FBE6EB; --pasado-bg:#EEEAF1;
+  --bar:#6E2B57; --bar-track:#EDE6F1;
+  --shadow:0 1px 2px rgba(27,21,32,.06), 0 8px 24px -16px rgba(27,21,32,.25);
+  --display:"Bodoni Moda", "Times New Roman", serif;
+  --body:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141019; --surface:#1D1724; --surface-2:#261E2F; --ink:#F2EDF5; --ink-2:#C4B8CE;
+  --muted:#9A8EA6; --line:#312839; --line-2:#453A50;
+  --accent:#D492BD; --accent-ink:#231A2A; --accent-soft:#33243040;
+  --guardar:#4F7FE0; --pico:#17A18A; --anio:#C08310; --ya:#E04E63; --pasado:#9A8EA6;
+  --guardar-bg:#1B2440; --pico-bg:#11302C; --anio-bg:#2F2512; --ya-bg:#3A1A23; --pasado-bg:#262030;
+  --bar:#C07FAC; --bar-track:#2A2232;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#141019; --surface:#1D1724; --surface-2:#261E2F; --ink:#F2EDF5; --ink-2:#C4B8CE;
+  --muted:#9A8EA6; --line:#312839; --line-2:#453A50;
+  --accent:#D492BD; --accent-ink:#231A2A; --accent-soft:#33243040;
+  --guardar:#4F7FE0; --pico:#17A18A; --anio:#C08310; --ya:#E04E63; --pasado:#9A8EA6;
+  --guardar-bg:#1B2440; --pico-bg:#11302C; --anio-bg:#2F2512; --ya-bg:#3A1A23; --pasado-bg:#262030;
+  --bar:#C07FAC; --bar-track:#2A2232;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:30; background:var(--surface)}
+h1,h2,h3{margin:0; text-wrap:balance}
+button{font:inherit; color:inherit; cursor:pointer}
+input,select,textarea{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums}
+
+/* ---------- cabecera ---------- */
+header{position:sticky; top:env(safe-area-inset-top,0px); z-index:20; background:var(--surface);
+  border-bottom:1px solid var(--line)}
+.head-in{max-width:960px; margin:0 auto; padding-block:12px 0;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+.brand h1{font-family:var(--display); font-size:26px; font-weight:600; letter-spacing:-.01em}
+.brand .sub{font-size:12px; color:var(--muted); letter-spacing:.08em; text-transform:uppercase}
+.brand .spacer{flex:1 1 auto; min-width:0}
+.icon-btn{background:none; border:1px solid var(--line-2); border-radius:8px; padding:5px 9px; color:var(--ink-2); font-size:13px}
+.icon-btn:hover{border-color:var(--accent); color:var(--accent)}
+nav{display:flex; gap:2px; margin-top:12px; overflow-x:auto; scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{background:none; border:0; border-bottom:2px solid transparent; padding:8px 12px 10px;
+  color:var(--muted); font-weight:500; font-size:14px; white-space:nowrap}
+nav button[aria-current="true"]{color:var(--ink); border-bottom-color:var(--accent)}
+
+/* ---------- cuerpo ---------- */
+main{max-width:960px; margin:0 auto; padding-block:20px 96px;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px))}
+section[hidden]{display:none !important}
+.lede{color:var(--ink-2); font-size:14px; margin:0 0 16px; max-width:62ch}
+
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:22px}
+.tile{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; min-width:0}
+.tile .k{font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted)}
+.tile .v{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:23px; line-height:1.2; margin-top:4px}
+.tile .n{font-size:12px; color:var(--muted); margin-top:2px}
+
+.grupo{margin-bottom:26px}
+.grupo-h{display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap}
+.grupo-h h2{font-family:var(--display); font-size:19px; font-weight:600}
+.grupo-h .cnt{font-family:var(--mono); font-size:12px; color:var(--muted)}
+.grupo-h .rule{flex:1 1 40px; height:1px; background:var(--line); min-width:0}
+.grupo-nota{font-size:13px; color:var(--muted); margin:-4px 0 10px; max-width:62ch}
+
+ul.lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+.fila{display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:start; width:100%; text-align:left;
+  background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--borde,var(--line));
+  border-radius:var(--r); padding:11px 13px}
+.fila:hover{border-color:var(--line-2); border-left-color:var(--borde,var(--line-2))}
+.thumb{width:40px; height:54px; border-radius:4px; object-fit:cover; background:var(--surface-2); border:1px solid var(--line)}
+.thumb.ph{display:grid; place-items:center; font-family:var(--display); font-size:17px; color:var(--muted)}
+.fila .mid{min-width:0}
+.nom{font-weight:600; font-size:15px; line-height:1.3}
+.nom .et{font-family:var(--display); font-weight:600}
+.meta{font-size:12.5px; color:var(--ink-2); margin-top:2px; display:flex; flex-wrap:wrap; gap:0 7px}
+.meta .sep{color:var(--line-2)}
+.right{text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:5px; white-space:nowrap}
+.precio{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:14px}
+.precio.est::after{content:"≈"; color:var(--muted); margin-left:3px; font-size:11px}
+.bot{font-size:11.5px; color:var(--muted)}
+
+.chip{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; letter-spacing:.03em;
+  padding:3px 8px; border-radius:999px; white-space:nowrap}
+.chip .dot{width:7px; height:7px; border-radius:50%; background:currentColor; flex:none}
+.chip.guardar{color:var(--guardar); background:var(--guardar-bg)}
+.chip.pico{color:var(--pico); background:var(--pico-bg)}
+.chip.anio{color:var(--anio); background:var(--anio-bg)}
+.chip.ya{color:var(--ya); background:var(--ya-bg)}
+.chip.pasado{color:var(--pasado); background:var(--pasado-bg)}
+.chip.plain{color:var(--ink-2); background:var(--surface-2)}
+
+/* línea de guarda */
+.linea{margin-top:9px; position:relative; height:16px}
+.track{position:absolute; inset:5px 0 auto; height:6px; border-radius:3px; background:var(--bar-track); overflow:hidden}
+.seg{position:absolute; top:0; height:100%}
+.seg.vent{background:var(--pico); opacity:.85}
+.seg.post{background:var(--ya); opacity:.38}
+.hoy{position:absolute; top:0; width:2px; height:16px; background:var(--ink); border-radius:1px}
+.hoy::after{content:"hoy"; position:absolute; left:50%; transform:translateX(-50%); top:-11px;
+  font-size:9px; letter-spacing:.06em; color:var(--muted); font-family:var(--mono)}
+.linea-pies{display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:1px}
+
+/* filtros */
+.filtros{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
+.filtros input[type=search], .filtros select{background:var(--surface); border:1px solid var(--line-2);
+  border-radius:8px; padding:7px 10px; font-size:14px; min-width:0}
+.filtros input[type=search]{flex:1 1 180px}
+.tog{display:flex; gap:0; border:1px solid var(--line-2); border-radius:8px; overflow:hidden}
+.tog button{background:var(--surface); border:0; padding:7px 11px; font-size:13px; color:var(--ink-2)}
+.tog button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+
+/* barras de estadística */
+.barras{display:flex; flex-direction:column; gap:7px}
+.barra{display:grid; grid-template-columns:minmax(84px,30%) 1fr auto; gap:10px; align-items:center}
+.barra .lbl{font-size:13px; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+.barra .tr{background:var(--bar-track); border-radius:3px; height:10px; min-width:0}
+.barra .fi{background:var(--bar); height:100%; border-radius:0 4px 4px 0; min-width:3px}
+.barra .vl{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:12.5px; color:var(--ink-2); white-space:nowrap}
+
+.tarjeta{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:15px 16px; margin-bottom:16px}
+.tarjeta h3{font-family:var(--display); font-size:17px; font-weight:600; margin-bottom:12px}
+
+/* ranking */
+.rk{display:grid; grid-template-columns:auto auto 1fr auto; gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid var(--line)}
+.rk:last-child{border-bottom:0}
+.rk .pos{font-family:var(--mono); font-size:12px; color:var(--muted); width:2.2em; text-align:right}
+.rk .nm{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px}
+.rk .pr{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:13.5px}
+
+/* vacío */
+.vacio{background:var(--surface); border:1px dashed var(--line-2); border-radius:var(--r); padding:28px 20px; text-align:center}
+.vacio h3{font-family:var(--display); font-size:19px; font-weight:600; margin-bottom:6px}
+.vacio p{color:var(--ink-2); font-size:14px; margin:0 auto 14px; max-width:40ch}
+
+/* botón flotante */
+.fab{position:fixed; z-index:25;
+  right:calc(16px + env(safe-area-inset-right,0px)); bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  background:var(--accent); color:var(--accent-ink); border:0; border-radius:999px;
+  padding:13px 20px; font-weight:600; font-size:15px; box-shadow:var(--shadow)}
+
+/* hojas / modales */
+.ov{position:fixed; inset:0; z-index:40; background:rgba(20,14,24,.5); display:flex; align-items:flex-end; justify-content:center}
+@media (min-width:640px){ .ov{align-items:center} }
+.hoja{background:var(--surface); width:100%; max-width:560px; max-height:88vh; overflow-y:auto;
+  border-radius:16px 16px 0 0; border:1px solid var(--line);
+  padding-block:18px calc(20px + env(safe-area-inset-bottom,0px));
+  padding-left:max(18px,env(safe-area-inset-left,0px)); padding-right:max(18px,env(safe-area-inset-right,0px))}
+@media (min-width:640px){ .hoja{border-radius:16px} }
+.hoja-h{display:flex; align-items:center; gap:10px; margin-bottom:14px}
+.hoja-h h2{font-family:var(--display); font-size:21px; font-weight:600; flex:1 1 auto; min-width:0}
+.campos{display:grid; grid-template-columns:1fr 1fr; gap:11px}
+.campo{display:flex; flex-direction:column; gap:4px; min-width:0}
+.campo.ancho{grid-column:1 / -1}
+.campo label{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.campo input, .campo select, .campo textarea{background:var(--bg); border:1px solid var(--line-2);
+  border-radius:8px; padding:8px 10px; font-size:15px; width:100%}
+.campo textarea{resize:vertical; min-height:56px}
+.acciones{display:flex; gap:9px; flex-wrap:wrap; margin-top:16px}
+.btn{border:1px solid var(--line-2); background:var(--surface); border-radius:9px; padding:10px 15px; font-weight:600; font-size:14px}
+.btn.pri{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn.dan{color:var(--ya); border-color:var(--ya)}
+.btn.gh{border-color:transparent; color:var(--ink-2)}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.btn.full{flex:1 1 140px}
+.opciones{display:flex; flex-direction:column; gap:10px}
+.opcion{display:flex; gap:13px; align-items:center; text-align:left; background:var(--bg);
+  border:1px solid var(--line-2); border-radius:12px; padding:14px 15px; width:100%}
+.opcion .em{font-family:var(--display); font-size:22px; color:var(--accent); width:28px; text-align:center; flex:none}
+.opcion .tt{font-weight:600; font-size:15px}
+.opcion .ds{font-size:12.5px; color:var(--muted); margin-top:1px}
+.preview{width:100%; max-height:230px; object-fit:contain; border-radius:10px; background:var(--surface-2); margin-bottom:12px}
+.estado-msg{font-size:13.5px; color:var(--ink-2); padding:10px 12px; background:var(--surface-2); border-radius:8px; margin-bottom:12px}
+.estado-msg.err{color:var(--ya); background:var(--ya-bg)}
+.nota{font-size:12px; color:var(--muted); margin-top:10px}
+.cargando{display:inline-block; width:11px; height:11px; border:2px solid var(--line-2); border-top-color:var(--accent);
+  border-radius:50%; animation:spin .8s linear infinite; vertical-align:-1px; margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){ .cargando{animation-duration:3s} }
+.toast{position:fixed; z-index:50; left:50%; transform:translateX(-50%);
+  bottom:calc(76px + env(safe-area-inset-bottom,0px)); background:var(--ink); color:var(--bg);
+  padding:9px 16px; border-radius:999px; font-size:13.5px; font-weight:500; box-shadow:var(--shadow); max-width:90vw}
+@media (max-width:460px){
+  .campos{grid-template-columns:1fr}
+  .fila{grid-template-columns:auto 1fr; }
+  .fila .right{grid-column:2; flex-direction:row; align-items:center; gap:10px; justify-content:flex-start}
+}
+</style>
+
+<header>
+  <div class="head-in">
+    <div class="brand">
+      <h1>Cava Marano</h1>
+      <span class="sub" id="resumen-head">cargando…</span>
+      <span class="spacer"></span>
+      <button class="icon-btn" id="btn-cfg" title="Ajustes">Ajustes</button>
+    </div>
+    <nav id="nav" role="tablist">
+      <button role="tab" data-v="tomar" aria-current="true">Qué tomar</button>
+      <button role="tab" data-v="cava">La cava</button>
+      <button role="tab" data-v="precios">Precios</button>
+      <button role="tab" data-v="numeros">Números</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section id="v-tomar"></section>
+  <section id="v-cava" hidden></section>
+  <section id="v-precios" hidden></section>
+  <section id="v-numeros" hidden></section>
+</main>
+
+<button class="fab" id="fab">+ Agregar vino</button>
+
+<script>
+(function(){
+"use strict";
+
+/* ============== constantes de dominio ============== */
+
+const HOY = new Date();
+const ANIO = HOY.getFullYear();
+
+// Ventana de guarda de referencia, en años después de la cosecha,
+// expresada para un vino de gama "reserva". El escalón de gama la estira o la acorta.
+const VENTANAS = {
+  "malbec":[3,10], "cabernet sauvignon":[4,14], "cabernet franc":[3,12], "bonarda":[2,7],
+  "syrah":[3,10], "shiraz":[3,10], "merlot":[2,8], "pinot noir":[2,8], "tannat":[4,12],
+  "petit verdot":[4,12], "tempranillo":[3,9], "sangiovese":[2,8], "ancellotta":[2,7],
+  "marselan":[3,10], "garnacha":[2,8], "grenache":[2,8], "mourvedre":[3,10], "nebbiolo":[4,14],
+  "corte":[3,12], "blend":[3,12], "chardonnay":[1,5], "sauvignon blanc":[0,2],
+  "torrontes":[0,2], "semillon":[1,6], "viognier":[0,3], "chenin blanc":[1,4],
+  "pedro gimenez":[0,2], "criolla":[0,2], "moscatel":[0,3], "riesling":[1,8], "gewurztraminer":[0,3]
+};
+// [factor inicio, factor fin] por gama
+const GAMAS = {
+  joven:       {f:[0,.32],  n:"Joven / sin madera"},
+  roble:       {f:[.6,.65], n:"Roble"},
+  reserva:     {f:[1,1],    n:"Reserva"},
+  granReserva: {f:[1.35,1.4], n:"Gran Reserva"},
+  icono:       {f:[1.7,1.6],  n:"Ícono / alta gama"}
+};
+const ES_RESERVA = {joven:false, roble:false, reserva:true, granReserva:true, icono:true};
+
+const ESTADOS = {
+  ya:      {n:"Tomar ya",        cls:"ya",      color:"var(--ya)",      orden:0},
+  anio:    {n:"Tomar este año",  cls:"anio",    color:"var(--anio)",    orden:1},
+  pico:    {n:"En punto",        cls:"pico",    color:"var(--pico)",    orden:2},
+  guardar: {n:"Guardar",         cls:"guardar", color:"var(--guardar)", orden:3},
+  pasado:  {n:"Posiblemente pasado", cls:"pasado", color:"var(--pasado)", orden:-1}
+};
+
+const BANDAS = [
+  {k:"bajo",    n:"Bajo"},
+  {k:"medio",   n:"Medio"},
+  {k:"alto",    n:"Alto"},
+  {k:"muyAlto", n:"Muy alto"}
+];
+
+// Anclas de precio minorista en Argentina relevadas en octubre de 2026.
+// Sirven para calibrar la estimación: sin ellas el modelo contesta con precios viejos.
+const ANCLAS = [
+  "Alamos Malbec ~ $4.500", "López Malbec ~ $4.400", "Portillo Malbec ~ $6.600",
+  "Lamadrid Terroir Selection Malbec ~ $11.000", "Rutini Cabernet Sauvignon ~ $30.000",
+  "Rutini Cabernet Franc ~ $32.800", "Luigi Bosca De Sangre ~ $45.400",
+  "Angélica Zapata Cabernet Franc ~ $45.700", "Rutini Single Vineyard Gualtallary ~ $66.000",
+  "Catena Zapata Malbec Argentino ~ $135.000", "íconos y alta gama $160.000 a $230.000"
+].join(" · ");
+
+const CFG_DEF = {
+  bandas:{bajo:12000, medio:35000, alto:80000},   // topes en ARS
+  dolar:1565,
+  relevado:"octubre 2026"
+};
+
+/* ============== estado ============== */
+
+const S = {
+  vinos:[], cfg:Object.assign({}, CFG_DEF), view:"tomar",
+  q:"", fEstado:"", fVar:"", fReserva:"", orden:"urgencia",
+  listo:false, db:null, sample:null, assets:null, descargas:null,
+  puedeImagenes:false, escribible:null
+};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sinAcento = s => String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();
+const fmtArs = new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0});
+const fmtNum = new Intl.NumberFormat("es-AR");
+const pesos = n => (n==null || !isFinite(n)) ? "—" : fmtArs.format(Math.round(n));
+const plural = (n,s,p) => n===1 ? s : (p||s+"s");
+
+/* ============== cálculo ============== */
+
+function uvaPrincipal(v){
+  const u = (v.varietales||[]).filter(Boolean);
+  if(!u.length) return "";
+  return u[0];
+}
+
+function claveUva(v){
+  const u = sinAcento(uvaPrincipal(v));
+  if(!u) return "";
+  if((v.varietales||[]).length > 1) return "corte";
+  for(const k of Object.keys(VENTANAS)) if(u === k) return k;
+  for(const k of Object.keys(VENTANAS)) if(u.includes(k)) return k;
+  return "";
+}
+
+// Ventana de guarda: la cargada a mano manda; si no, se deriva de uva + gama + tipo.
+function ventana(v){
+  if(v.ventanaDesde && v.ventanaHasta) return {desde:+v.ventanaDesde, hasta:+v.ventanaHasta, propia:true};
+  const cosecha = +v.anada;
+  if(!cosecha) return null;
+  let base;
+  const tipo = sinAcento(v.tipo);
+  if(tipo === "espumante") base = v.gama==="icono" || v.gama==="granReserva" ? [1,6] : [0,3];
+  else if(tipo === "rosado") base = [0,2];
+  else if(tipo === "dulce") base = [1,10];
+  else base = VENTANAS[claveUva(v)] || [2,8];
+  const f = (GAMAS[v.gama] || GAMAS.reserva).f;
+  const desde = cosecha + Math.round(base[0]*f[0]);
+  const hasta = cosecha + Math.max(1, Math.round(base[1]*f[1]));
+  return {desde, hasta:Math.max(hasta, desde+1), propia:false};
+}
+
+function estado(v){
+  const w = ventana(v);
+  if(!w) return {k:"pico", w:null, faltan:0};
+  if(ANIO > w.hasta + 2) return {k:"pasado", w, faltan:0};
+  if(ANIO >= w.hasta)    return {k:"ya", w, faltan:0};
+  if(ANIO >= w.hasta-1)  return {k:"anio", w, faltan:0};
+  if(ANIO < w.desde)     return {k:"guardar", w, faltan:w.desde-ANIO};
+  return {k:"pico", w, faltan:0};
+}
+
+function banda(v, cfg){
+  const p = +v.precioArs;
+  if(!p) return null;
+  if(p < cfg.bandas.bajo) return "bajo";
+  if(p < cfg.bandas.medio) return "medio";
+  if(p < cfg.bandas.alto) return "alto";
+  return "muyAlto";
+}
+
+const esReserva = v => v.esReserva != null ? !!v.esReserva : !!ES_RESERVA[v.gama];
+const cant = v => Math.max(0, +v.cantidad || 0);
+const valor = v => (+v.precioArs || 0) * cant(v);
+
+function ordenar(lista, modo){
+  const c = [...lista];
+  if(modo === "urgencia") c.sort((a,b)=>{
+    const ea = estado(a), eb = estado(b);
+    const oa = ESTADOS[ea.k].orden, ob = ESTADOS[eb.k].orden;
+    if(oa !== ob) return oa - ob;
+    const wa = ea.w ? ea.w.hasta : 9999, wb = eb.w ? eb.w.hasta : 9999;
+    return wa - wb;
+  });
+  else if(modo === "precio") c.sort((a,b)=>(+b.precioArs||0)-(+a.precioArs||0));
+  else if(modo === "anada") c.sort((a,b)=>(+a.anada||9999)-(+b.anada||9999));
+  else c.sort((a,b)=> (a.bodega+a.etiqueta).localeCompare(b.bodega+b.etiqueta,"es"));
+  return c;
+}
+
+/* ============== piezas de render ============== */
+
+function chipEstado(e){
+  const d = ESTADOS[e.k];
+  const extra = e.k==="guardar" ? ` ${e.faltan} ${plural(e.faltan,"año")}` : "";
+  return `<span class="chip ${d.cls}"><span class="dot"></span>${esc(d.n)}${extra}</span>`;
+}
+
+function lineaGuarda(v){
+  const e = estado(v);
+  if(!e.w || !v.anada) return "";
+  const ini = +v.anada;
+  const fin = Math.max(e.w.hasta + 2, ANIO + 1);
+  const span = Math.max(1, fin - ini);
+  const pct = y => Math.max(0, Math.min(100, ((y - ini) / span) * 100));
+  const a = pct(e.w.desde), b = pct(e.w.hasta), h = pct(ANIO);
+  return `<div class="linea" title="Ventana de guarda ${e.w.desde}–${e.w.hasta}">
+    <div class="track">
+      <span class="seg vent" style="left:${a.toFixed(1)}%; width:${Math.max(1.5,b-a).toFixed(1)}%"></span>
+      <span class="seg post" style="left:${b.toFixed(1)}%; width:${Math.max(0,100-b).toFixed(1)}%"></span>
+    </div>
+    <span class="hoy" style="left:calc(${h.toFixed(1)}% - 1px)"></span>
+  </div>
+  <div class="linea-pies"><span>${ini}</span><span>ventana ${e.w.desde}–${e.w.hasta}${e.w.propia?"":" · estimada"}</span><span>${fin}</span></div>`;
+}
+
+function fila(v, opts){
+  opts = opts || {};
+  const e = estado(v);
+  const uvas = (v.varietales||[]).join(" · ");
+  const meta = [uvas, v.anada||"s/añada", v.region, (GAMAS[v.gama]||{}).n].filter(Boolean);
+  const foto = v.fotoUrl
+    ? `<img class="thumb" src="${esc(v.fotoUrl)}" alt="">`
+    : `<div class="thumb ph" aria-hidden="true">${esc((v.bodega||"?").trim().charAt(0).toUpperCase())}</div>`;
+  return `<li><button class="fila" data-id="${esc(v.id)}" style="--borde:${ESTADOS[e.k].color}">
+    ${foto}
+    <div class="mid">
+      <div class="nom">${esc(v.bodega||"Sin bodega")} <span class="et">${esc(v.etiqueta||"")}</span></div>
+      <div class="meta">${meta.map(m=>esc(m)).join(' <span class="sep">·</span> ')}</div>
+      ${opts.sinLinea ? "" : lineaGuarda(v)}
+    </div>
+    <div class="right">
+      ${opts.sinChip ? "" : chipEstado(e)}
+      <span class="precio ${v.precioFuente==="estimado"?"est":""}">${pesos(+v.precioArs)}</span>
+      <span class="bot">${cant(v)} ${plural(cant(v),"botella")}</span>
+    </div>
+  </button></li>`;
+}
+
+function barras(items, total){
+  if(!items.length) return `<p class="lede">Todavía no hay datos.</p>`;
+  const max = Math.max(...items.map(i=>i.v), 1);
+  return `<div class="barras">` + items.map(i=>`
+    <div class="barra">
+      <span class="lbl" title="${esc(i.k)}">${esc(i.k)}</span>
+      <span class="tr"><span class="fi" style="width:${Math.max(3,(i.v/max)*100).toFixed(1)}%"></span></span>
+      <span class="vl">${fmtNum.format(i.v)}${total?` · ${Math.round(i.v/total*100)}%`:""}</span>
+    </div>`).join("") + `</div>`;
+}
+
+function cuenta(lista, fn){
+  const m = new Map();
+  for(const v of lista){
+    const ks = fn(v);
+    for(const k of (Array.isArray(ks)?ks:[ks])){
+      if(!k) continue;
+      m.set(k, (m.get(k)||0) + cant(v));
+    }
+  }
+  return [...m].map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v || String(a.k).localeCompare(String(b.k),"es"));
+}
+
+/* ============== vistas ============== */
+
+function vacio(titulo, texto){
+  return `<div class="vacio"><h3>${esc(titulo)}</h3><p>${esc(texto)}</p>
+    <button class="btn pri" data-accion="agregar">+ Agregar el primero</button></div>`;
+}
+
+function renderTomar(){
+  const el = $("#v-tomar");
+  if(!S.listo){ el.innerHTML = `<p class="lede"><span class="cargando"></span>Abriendo la cava…</p>`; return; }
+  if(!S.vinos.length){ el.innerHTML = vacio("La cava está vacía","Sacale una foto a la etiqueta de un vino y lo cargo con bodega, añada, varietal, precio estimado y ventana de guarda."); return; }
+
+  const porEstado = {ya:[], anio:[], pico:[], guardar:[], pasado:[]};
+  for(const v of S.vinos) porEstado[estado(v).k].push(v);
+
+  const bot = k => porEstado[k].reduce((s,v)=>s+cant(v),0);
+  const tiles = `<div class="tiles">
+    ${[["ya","Tomar ya"],["anio","Este año"],["pico","En punto"],["guardar","Guardar"]].map(([k,n])=>`
+      <div class="tile"><div class="k">${n}</div>
+        <div class="v" style="color:${ESTADOS[k].color}">${bot(k)}</div>
+        <div class="n">${porEstado[k].length} ${plural(porEstado[k].length,"etiqueta")}</div></div>`).join("")}
+  </div>`;
+
+  const notas = {
+    ya:"Llegaron al final de su ventana. Abrilos en las próximas semanas.",
+    anio:"Les queda cerca de un año de buena forma. Programalos.",
+    pico:"Están dentro de su mejor momento: podés abrirlos o esperar un poco más.",
+    guardar:"Todavía no entraron en su ventana. Guardalos los años que indica cada ficha.",
+    pasado:"Pasaron su ventana por más de dos años. Pueden estar bien igual, pero abrilos sin expectativas."
+  };
+
+  const grupos = ["ya","anio","pico","guardar","pasado"].map(k=>{
+    const l = porEstado[k];
+    if(!l.length) return "";
+    const ord = k==="guardar"
+      ? [...l].sort((a,b)=>estado(a).faltan-estado(b).faltan)
+      : ordenar(l,"urgencia");
+    return `<div class="grupo">
+      <div class="grupo-h"><h2>${esc(ESTADOS[k].n)}</h2>
+        <span class="cnt">${ord.length} ${plural(ord.length,"etiqueta")} · ${ord.reduce((s,v)=>s+cant(v),0)} ${plural(ord.reduce((s,v)=>s+cant(v),0),"botella")}</span>
+        <span class="rule"></span></div>
+      <p class="grupo-nota">${esc(notas[k])}</p>
+      <ul class="lista">${ord.map(v=>fila(v,{sinChip:k!=="guardar"})).join("")}</ul>
+    </div>`;
+  }).join("");
+
+  el.innerHTML = `<p class="lede">Ordenado por urgencia. La ventana de guarda sale del varietal, la gama y la añada; si cargaste una ventana a mano, mando esa.</p>${tiles}${grupos}`;
+}
+
+function renderCava(){
+  const el = $("#v-cava");
+  if(!S.listo){ el.innerHTML = `<p class="lede"><span class="cargando"></span>Abriendo la cava…</p>`; return; }
+  if(!S.vinos.length){ el.innerHTML = vacio("La cava está vacía","Agregá tu primer vino con una foto de la etiqueta o cargándolo a mano."); return; }
+
+  const uvas = [...new Set(S.vinos.flatMap(v=>v.varietales||[]))].sort((a,b)=>a.localeCompare(b,"es"));
+  const q = sinAcento(S.q);
+  let lista = S.vinos.filter(v=>{
+    if(q && !sinAcento([v.bodega,v.etiqueta,(v.varietales||[]).join(" "),v.region,v.anada].join(" ")).includes(q)) return false;
+    if(S.fEstado && estado(v).k !== S.fEstado) return false;
+    if(S.fVar && !(v.varietales||[]).includes(S.fVar)) return false;
+    if(S.fReserva === "si" && !esReserva(v)) return false;
+    if(S.fReserva === "no" && esReserva(v)) return false;
+    return true;
+  });
+  lista = ordenar(lista, S.orden);
+  const botellas = lista.reduce((s,v)=>s+cant(v),0);
+
+  el.innerHTML = `
+  <div class="filtros">
+    <input type="search" id="f-q" placeholder="Buscar bodega, etiqueta, varietal…" value="${esc(S.q)}" aria-label="Buscar">
+    <select id="f-estado" aria-label="Filtrar por momento">
+      <option value="">Todo momento</option>
+      ${Object.keys(ESTADOS).map(k=>`<option value="${k}" ${S.fEstado===k?"selected":""}>${esc(ESTADOS[k].n)}</option>`).join("")}
+    </select>
+    <select id="f-var" aria-label="Filtrar por varietal">
+      <option value="">Todo varietal</option>
+      ${uvas.map(u=>`<option value="${esc(u)}" ${S.fVar===u?"selected":""}>${esc(u)}</option>`).join("")}
+    </select>
+    <div class="tog" role="group" aria-label="Reserva">
+      <button data-res="" aria-pressed="${S.fReserva===""}">Todos</button>
+      <button data-res="si" aria-pressed="${S.fReserva==="si"}">Reserva</button>
+      <button data-res="no" aria-pressed="${S.fReserva==="no"}">No reserva</button>
+    </div>
+    <select id="f-orden" aria-label="Ordenar">
+      <option value="urgencia" ${S.orden==="urgencia"?"selected":""}>Por urgencia</option>
+      <option value="precio" ${S.orden==="precio"?"selected":""}>Por precio</option>
+      <option value="anada" ${S.orden==="anada"?"selected":""}>Por añada</option>
+      <option value="nombre" ${S.orden==="nombre"?"selected":""}>Por nombre</option>
+    </select>
+  </div>
+  <p class="lede">${lista.length} ${plural(lista.length,"etiqueta")} · ${botellas} ${plural(botellas,"botella")}${lista.length!==S.vinos.length?` (de ${S.vinos.length} en total)`:""}. Tocá una fila para editarla o descontar una botella.</p>
+  ${lista.length ? `<ul class="lista">${lista.map(v=>fila(v)).join("")}</ul>`
+    : `<div class="vacio"><h3>Ningún vino coincide</h3><p>Probá con otro filtro o limpiá la búsqueda.</p></div>`}`;
+}
+
+function renderPrecios(){
+  const el = $("#v-precios");
+  if(!S.listo){ el.innerHTML = `<p class="lede"><span class="cargando"></span>Abriendo la cava…</p>`; return; }
+  const conPrecio = S.vinos.filter(v=>+v.precioArs>0);
+  if(!conPrecio.length){ el.innerHTML = vacio("Sin precios cargados","Cuando leo una etiqueta estimo el precio de góndola en la Argentina; también podés escribirlo a mano."); return; }
+
+  const cfg = S.cfg;
+  const total = S.vinos.reduce((s,v)=>s+valor(v),0);
+  const botellas = S.vinos.reduce((s,v)=>s+cant(v),0);
+  const prom = botellas ? total/botellas : 0;
+  const cara = [...conPrecio].sort((a,b)=>b.precioArs-a.precioArs)[0];
+
+  const topes = {bajo:`hasta ${pesos(cfg.bandas.bajo)}`, medio:`${pesos(cfg.bandas.bajo)} a ${pesos(cfg.bandas.medio)}`,
+    alto:`${pesos(cfg.bandas.medio)} a ${pesos(cfg.bandas.alto)}`, muyAlto:`más de ${pesos(cfg.bandas.alto)}`};
+
+  const porBanda = BANDAS.map(b=>{
+    const l = conPrecio.filter(v=>banda(v,cfg)===b.k);
+    return {...b, etiquetas:l.length, botellas:l.reduce((s,v)=>s+cant(v),0), valor:l.reduce((s,v)=>s+valor(v),0)};
+  });
+
+  const ranking = [...conPrecio].sort((a,b)=>b.precioArs-a.precioArs);
+
+  el.innerHTML = `
+  <p class="lede">Precios de góndola en la Argentina, en pesos. Los marcados con ≈ son estimaciones mías calibradas con precios relevados en ${esc(cfg.relevado)}; los que escribís a mano quedan tal cual. Dólar de referencia: ${pesos(cfg.dolar)}.</p>
+  <div class="tiles">
+    <div class="tile"><div class="k">Valor de la cava</div><div class="v">${pesos(total)}</div><div class="n">${botellas} ${plural(botellas,"botella")} · US$ ${fmtNum.format(Math.round(total/cfg.dolar))}</div></div>
+    <div class="tile"><div class="k">Promedio por botella</div><div class="v">${pesos(prom)}</div><div class="n">US$ ${fmtNum.format(Math.round(prom/cfg.dolar))}</div></div>
+    <div class="tile"><div class="k">La más cara</div><div class="v" style="font-size:16px; font-family:var(--body)">${esc(cara.etiqueta||cara.bodega)}</div><div class="n">${pesos(cara.precioArs)}</div></div>
+  </div>
+
+  <div class="tarjeta">
+    <h3>Bandas de costo</h3>
+    <div class="barras">
+      ${porBanda.map(b=>{
+        const max = Math.max(...porBanda.map(x=>x.botellas),1);
+        return `<div class="barra">
+          <span class="lbl">${esc(b.n)}</span>
+          <span class="tr"><span class="fi" style="width:${Math.max(3,(b.botellas/max)*100).toFixed(1)}%"></span></span>
+          <span class="vl">${b.botellas} ${plural(b.botellas,"bot.")}</span>
+        </div>
+        <div class="barra" style="margin-top:-4px"><span class="lbl" style="font-size:11px; color:var(--muted)">${esc(topes[b.k])}</span>
+          <span style="grid-column:2 / -1; font-size:11.5px; color:var(--muted); font-family:var(--mono)">${pesos(b.valor)} en total</span></div>`;
+      }).join("")}
+    </div>
+    <p class="nota">Cambiá los cortes de cada banda en Ajustes.</p>
+  </div>
+
+  <div class="tarjeta">
+    <h3>Ranking por precio</h3>
+    ${ranking.map((v,i)=>`<div class="rk">
+      <span class="pos">${i+1}</span>
+      <span class="chip plain">${esc(BANDAS.find(b=>b.k===banda(v,cfg)).n)}</span>
+      <span class="nm">${esc(v.bodega)} <strong>${esc(v.etiqueta||"")}</strong> <span style="color:var(--muted)">${esc(v.anada||"")}</span></span>
+      <span class="pr">${pesos(v.precioArs)}${v.precioFuente==="estimado"?' <span style="color:var(--muted)">≈</span>':""}</span>
+    </div>`).join("")}
+  </div>`;
+}
+
+function renderNumeros(){
+  const el = $("#v-numeros");
+  if(!S.listo){ el.innerHTML = `<p class="lede"><span class="cargando"></span>Abriendo la cava…</p>`; return; }
+  if(!S.vinos.length){ el.innerHTML = vacio("Todavía no hay nada que contar","Cargá algunos vinos y acá vas a ver cuántos tenés de cada uva, de cada añada y de cada región."); return; }
+
+  const botellas = S.vinos.reduce((s,v)=>s+cant(v),0);
+  const res = S.vinos.filter(esReserva).reduce((s,v)=>s+cant(v),0);
+  const uvas = cuenta(S.vinos, v=>v.varietales||[]);
+  const anadas = cuenta(S.vinos, v=>v.anada?String(v.anada):"");
+  const regiones = cuenta(S.vinos, v=>v.region);
+  const tipos = cuenta(S.vinos, v=>v.tipo);
+  const gamas = cuenta(S.vinos, v=>(GAMAS[v.gama]||{}).n);
+  anadas.sort((a,b)=>b.k.localeCompare(a.k));
+
+  el.innerHTML = `
+  <p class="lede">Todo contado en botellas, no en etiquetas: un vino con tres botellas pesa tres.</p>
+  <div class="tiles">
+    <div class="tile"><div class="k">Botellas</div><div class="v">${botellas}</div><div class="n">${S.vinos.length} ${plural(S.vinos.length,"etiqueta")}</div></div>
+    <div class="tile"><div class="k">De reserva</div><div class="v">${res}</div><div class="n">${botellas?Math.round(res/botellas*100):0}% de la cava</div></div>
+    <div class="tile"><div class="k">Sin reserva</div><div class="v">${botellas-res}</div><div class="n">ventanas más cortas</div></div>
+    <div class="tile"><div class="k">Uvas distintas</div><div class="v">${uvas.length}</div><div class="n">${esc(uvas.length?uvas[0].k:"")} es la que más tenés</div></div>
+  </div>
+  <div class="tarjeta"><h3>Por varietal</h3>${barras(uvas, botellas)}</div>
+  <div class="tarjeta"><h3>Por añada</h3>${barras(anadas, botellas)}</div>
+  <div class="tarjeta"><h3>Por gama</h3>${barras(gamas, botellas)}</div>
+  <div class="tarjeta"><h3>Por región</h3>${barras(regiones, botellas)}</div>
+  <div class="tarjeta"><h3>Por tipo</h3>${barras(tipos, botellas)}</div>`;
+}
+
+function render(){
+  const botellas = S.vinos.reduce((s,v)=>s+cant(v),0);
+  $("#resumen-head").textContent = S.listo
+    ? `${botellas} ${plural(botellas,"botella")} · ${S.vinos.length} ${plural(S.vinos.length,"etiqueta")}`
+    : "cargando…";
+  for(const v of ["tomar","cava","precios","numeros"]) $("#v-"+v).hidden = (v !== S.view);
+  for(const b of document.querySelectorAll("#nav button")) b.setAttribute("aria-current", String(b.dataset.v === S.view));
+  ({tomar:renderTomar, cava:renderCava, precios:renderPrecios, numeros:renderNumeros})[S.view]();
+}
+
+/* ============== hojas ============== */
+
+let cerrarHoja = null;
+function hoja(html, montar){
+  cerrar();
+  const ov = document.createElement("div");
+  ov.className = "ov";
+  ov.innerHTML = `<div class="hoja" role="dialog" aria-modal="true">${html}</div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener("click", e => { if(e.target === ov) cerrar(); });
+  const onKey = e => { if(e.key === "Escape") cerrar(); };
+  document.addEventListener("keydown", onKey);
+  cerrarHoja = () => { document.removeEventListener("keydown", onKey); ov.remove(); cerrarHoja = null; };
+  if(montar) montar(ov.querySelector(".hoja"));
+  const f = ov.querySelector("input,select,textarea,button");
+  if(f && window.matchMedia("(min-width:640px)").matches) f.focus();
+  return ov.querySelector(".hoja");
+}
+function cerrar(){ if(cerrarHoja) cerrarHoja(); }
+
+let toastT = null;
+function toast(msg){
+  const prev = document.querySelector(".toast");
+  if(prev) prev.remove();
+  clearTimeout(toastT);
+  const t = document.createElement("div");
+  t.className = "toast"; t.textContent = msg; t.setAttribute("role","status");
+  document.body.appendChild(t);
+  toastT = setTimeout(()=>t.remove(), 3200);
+}
+
+/* ---- formulario de vino ---- */
+
+function formHtml(v){
+  const sel = (o,val) => o.map(([k,n])=>`<option value="${esc(k)}" ${val===k?"selected":""}>${esc(n)}</option>`).join("");
+  return `<div class="campos">
+    <div class="campo"><label for="c-bodega">Bodega</label><input id="c-bodega" value="${esc(v.bodega||"")}"></div>
+    <div class="campo"><label for="c-etiqueta">Etiqueta</label><input id="c-etiqueta" value="${esc(v.etiqueta||"")}"></div>
+    <div class="campo ancho"><label for="c-var">Varietales (separados por coma)</label><input id="c-var" value="${esc((v.varietales||[]).join(", "))}" placeholder="Malbec, Cabernet Franc"></div>
+    <div class="campo"><label for="c-anada">Añada</label><input id="c-anada" class="num" inputmode="numeric" value="${esc(v.anada||"")}" placeholder="${ANIO-4}"></div>
+    <div class="campo"><label for="c-region">Región</label><input id="c-region" value="${esc(v.region||"")}" placeholder="Valle de Uco"></div>
+    <div class="campo"><label for="c-tipo">Tipo</label><select id="c-tipo">${sel([["tinto","Tinto"],["blanco","Blanco"],["rosado","Rosado"],["espumante","Espumante"],["dulce","Dulce / cosecha tardía"]], v.tipo||"tinto")}</select></div>
+    <div class="campo"><label for="c-gama">Gama</label><select id="c-gama">${sel(Object.keys(GAMAS).map(k=>[k,GAMAS[k].n]), v.gama||"reserva")}</select></div>
+    <div class="campo"><label for="c-cant">Botellas</label><input id="c-cant" class="num" inputmode="numeric" value="${esc(v.cantidad!=null?v.cantidad:1)}"></div>
+    <div class="campo"><label for="c-precio">Precio (ARS)</label><input id="c-precio" class="num" inputmode="numeric" value="${esc(v.precioArs||"")}"></div>
+    <div class="campo"><label for="c-vd">Ventana desde</label><input id="c-vd" class="num" inputmode="numeric" value="${esc(v.ventanaDesde||"")}" placeholder="auto"></div>
+    <div class="campo"><label for="c-vh">Ventana hasta</label><input id="c-vh" class="num" inputmode="numeric" value="${esc(v.ventanaHasta||"")}" placeholder="auto"></div>
+    <div class="campo ancho"><label for="c-notas">Notas</label><textarea id="c-notas" placeholder="Dónde lo compraste, con qué lo tomarías…">${esc(v.notas||"")}</textarea></div>
+  </div>`;
+}
+
+function leerForm(base){
+  const g = id => $("#c-"+id) ? $("#c-"+id).value.trim() : "";
+  const n = id => { const x = parseInt(g(id),10); return isFinite(x) ? x : null; };
+  const out = Object.assign({}, base, {
+    bodega:g("bodega"), etiqueta:g("etiqueta"),
+    varietales:g("var").split(",").map(s=>s.trim()).filter(Boolean),
+    anada:n("anada"), region:g("region"), tipo:g("tipo"), gama:g("gama"),
+    cantidad:Math.max(0, n("cant")||0), notas:g("notas"),
+    ventanaDesde:n("vd"), ventanaHasta:n("vh")
+  });
+  const p = n("precio");
+  if(p !== (base.precioArs ?? null)) out.precioFuente = "manual";
+  out.precioArs = p;
+  out.esReserva = ES_RESERVA[out.gama];
+  return out;
+}
+
+function abrirEditor(v, titulo){
+  const nuevo = !v.id;
+  hoja(`
+    <div class="hoja-h"><h2>${esc(titulo)}</h2><button class="icon-btn" data-x="1">Cerrar</button></div>
+    ${v.fotoUrl?`<img class="preview" src="${esc(v.fotoUrl)}" alt="Etiqueta">`:""}
+    ${v._aviso?`<div class="estado-msg">${esc(v._aviso)}</div>`:""}
+    ${formHtml(v)}
+    <div class="acciones">
+      <button class="btn pri full" data-g="1">${nuevo?"Guardar en la cava":"Guardar cambios"}</button>
+      ${!nuevo?`<button class="btn" data-tome="1">Tomé una botella</button>`:""}
+      ${!nuevo?`<button class="btn dan" data-del="1">Eliminar</button>`:""}
+    </div>
+    <p class="nota">Dejá las ventanas vacías y las calculo con el varietal, la gama y la añada. Si escribís un precio a mano, deja de ser estimación.</p>
+  `, el => {
+    el.querySelector("[data-x]").onclick = cerrar;
+    el.querySelector("[data-g]").onclick = async () => {
+      const datos = leerForm(v);
+      if(!datos.bodega && !datos.etiqueta){ toast("Poné al menos la bodega o la etiqueta"); return; }
+      await guardar(datos);
+      cerrar();
+      toast(nuevo ? "Vino agregado" : "Cambios guardados");
+    };
+    const t = el.querySelector("[data-tome]");
+    if(t) t.onclick = async () => {
+      const q = cant(v);
+      if(q <= 0){ toast("No quedan botellas de este vino"); return; }
+      await guardar(Object.assign({}, v, {cantidad:q-1}));
+      cerrar();
+      toast(q-1 === 0 ? "Se terminó: queda en la cava con 0 botellas" : `Quedan ${q-1}`);
+    };
+    const d = el.querySelector("[data-del]");
+    if(d) d.onclick = () => confirmar(`¿Eliminar ${v.bodega} ${v.etiqueta||""}?`, "Se borra de la cava para siempre.", async () => {
+      await borrar(v.id); cerrar(); toast("Eliminado");
+    });
+  });
+}
+
+function confirmar(titulo, texto, fn){
+  const anterior = cerrarHoja;
+  hoja(`<div class="hoja-h"><h2>${esc(titulo)}</h2></div>
+    <p class="lede">${esc(texto)}</p>
+    <div class="acciones"><button class="btn dan full" data-si="1">Sí, eliminar</button>
+    <button class="btn gh" data-no="1">Cancelar</button></div>`, el => {
+    el.querySelector("[data-si]").onclick = async () => { await fn(); };
+    el.querySelector("[data-no]").onclick = cerrar;
+  });
+}
+
+/* ---- alta por foto ---- */
+
+function abrirAlta(){
+  hoja(`
+    <div class="hoja-h"><h2>Agregar vino</h2><button class="icon-btn" data-x="1">Cerrar</button></div>
+    <div class="opciones">
+      <button class="opcion" data-foto="1" ${S.puedeImagenes?"":"disabled"}>
+        <span class="em">◉</span>
+        <span><span class="tt">Sacarle una foto a la etiqueta</span>
+        <span class="ds">${S.puedeImagenes?"Leo bodega, varietal, añada y región, y estimo precio y ventana de guarda.":"No disponible en esta sesión: cargalo a mano."}</span></span>
+      </button>
+      <button class="opcion" data-manual="1">
+        <span class="em">✎</span>
+        <span><span class="tt">Cargarlo a mano</span><span class="ds">Doce campos, todos opcionales menos el nombre.</span></span>
+      </button>
+    </div>
+    <input type="file" id="file-in" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
+  `, el => {
+    el.querySelector("[data-x]").onclick = cerrar;
+    el.querySelector("[data-manual]").onclick = () => abrirEditor({cantidad:1, tipo:"tinto", gama:"reserva"}, "Vino nuevo");
+    const f = el.querySelector("[data-foto]");
+    const inp = el.querySelector("#file-in");
+    if(S.puedeImagenes){
+      f.onclick = () => inp.click();
+      inp.onchange = () => { if(inp.files && inp.files[0]) leerEtiqueta(inp.files[0]); };
+    }
+  });
+}
+
+function achicar(file, lado){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const e = Math.min(1, lado / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width*e); c.height = Math.round(img.height*e);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => b ? res(b) : rej(new Error("no-blob")), "image/jpeg", .85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("no-img")); };
+    img.src = url;
+  });
+}
+
+const PROMPT = `Sos sommelier y trabajás con vinos argentinos. En la imagen hay la etiqueta de una botella.
+
+Leé la etiqueta y devolvé SOLO un objeto JSON con estas claves exactas:
+{"legible":true,"bodega":"","etiqueta":"","varietales":["Malbec"],"anada":2019,"region":"","tipo":"tinto","gama":"reserva","precioArs":25000,"ventanaDesde":2022,"ventanaHasta":2029,"notas":"","confianza":0.8}
+
+Reglas:
+- "legible": false si la foto no es una etiqueta de vino o no se lee nada. En ese caso dejá el resto vacío o en null.
+- "varietales": los nombres de uva tal como se escriben en español ("Malbec", "Cabernet Franc", "Syrah"). Si es un corte sin uvas declaradas, poné ["Corte"].
+- "anada": el año de cosecha como número. null si no figura.
+- "tipo": uno de tinto, blanco, rosado, espumante, dulce.
+- "gama": uno de joven, roble, reserva, granReserva, icono. Usá lo que diga la etiqueta y lo que sepas de esa línea de esa bodega. "joven" para vinos sin paso por madera.
+- "precioArs": precio minorista aproximado de una botella de 750 ml en una vinoteca argentina HOY, en pesos argentinos, como número entero sin separadores. Calibralo con estas referencias relevadas en octubre de 2026: ANCLAS_AQUI. Dólar libre de referencia: DOLAR_AQUI pesos. No uses precios de otros años ni de otros países: los precios argentinos en pesos suben todos los años.
+- "ventanaDesde" y "ventanaHasta": años calendario entre los que ese vino se toma en su mejor momento, contando desde la cosecha y según su gama real.
+- "notas": una sola línea, menos de 120 caracteres, con lo más útil para decidir cuándo abrirlo.
+- "confianza": 0 a 1, qué tan seguro estás de lo que leíste.
+No agregues texto fuera del JSON.`;
+
+async function leerEtiqueta(file){
+  let blob;
+  try { blob = await achicar(file, 1600); }
+  catch(e){ toast("No pude leer esa imagen"); return; }
+  const fotoUrl = URL.createObjectURL(blob);
+
+  const ctl = new AbortController();
+  hoja(`
+    <div class="hoja-h"><h2>Leyendo la etiqueta</h2></div>
+    <img class="preview" src="${fotoUrl}" alt="Foto de la etiqueta">
+    <div class="estado-msg" id="paso"><span class="cargando"></span>Mirando la foto…</div>
+    <div class="acciones"><button class="btn gh" data-stop="1">Cancelar</button></div>
+  `, el => { el.querySelector("[data-stop]").onclick = () => { ctl.abort(); cerrar(); }; });
+
+  const prompt = PROMPT.replace("ANCLAS_AQUI", ANCLAS).replace("DOLAR_AQUI", String(S.cfg.dolar));
+  let d;
+  try{
+    d = await S.sample.json(prompt, {images:[blob], modelTier:"complex", signal:ctl.signal, cache:false});
+  }catch(e){
+    if(e && e.code === "cancelled") return;
+    const copia = {
+      not_granted:"No autorizaste a esta página a usar Claude. Podés cargar el vino a mano.",
+      rate_limited:"Claude está ocupado o llegaste al límite de uso. Probá en un rato.",
+      invalid_json:"La respuesta vino mal formada. Probá de nuevo con una foto más nítida.",
+      image_rejected:"Esa imagen no se pudo procesar. Probá con otra foto.",
+      refused:"Claude no quiso responder sobre esa imagen."
+    };
+    const p = document.querySelector("#paso");
+    if(p){ p.className = "estado-msg err"; p.textContent = (copia[e && e.code] || "No pude leer la etiqueta. Probá de nuevo o cargalo a mano."); }
+    const acc = document.querySelector(".acciones");
+    if(acc) acc.innerHTML = `<button class="btn pri full" id="r-manual">Cargarlo a mano</button><button class="btn gh" id="r-cerrar">Cerrar</button>`;
+    const rm = document.querySelector("#r-manual");
+    if(rm) rm.onclick = () => abrirEditor({cantidad:1, tipo:"tinto", gama:"reserva", fotoUrl}, "Vino nuevo");
+    const rc = document.querySelector("#r-cerrar");
+    if(rc) rc.onclick = cerrar;
+    return;
+  }
+
+  if(!d || d.legible === false){
+    const p = document.querySelector("#paso");
+    if(p){ p.className = "estado-msg err"; p.textContent = "No reconocí una etiqueta de vino en esa foto."; }
+    const acc = document.querySelector(".acciones");
+    if(acc){
+      acc.innerHTML = `<button class="btn pri full" id="r-manual">Cargarlo a mano</button><button class="btn gh" id="r-cerrar">Cerrar</button>`;
+      document.querySelector("#r-manual").onclick = () => abrirEditor({cantidad:1, tipo:"tinto", gama:"reserva", fotoUrl}, "Vino nuevo");
+      document.querySelector("#r-cerrar").onclick = cerrar;
+    }
+    return;
+  }
+
+  const paso = document.querySelector("#paso");
+  if(paso) paso.innerHTML = `<span class="cargando"></span>Guardando la foto…`;
+
+  let fotoId = null, fotoFinal = fotoUrl;
+  if(S.assets){
+    try{
+      const chico = await achicar(file, 900);
+      const up = await S.assets.upload(chico);
+      fotoId = up.id; fotoFinal = up.url;
+    }catch(e){ /* la foto es opcional: sigue con la copia local */ }
+  }
+
+  const conf = typeof d.confianza === "number" ? d.confianza : null;
+  const v = {
+    bodega: String(d.bodega||"").trim(),
+    etiqueta: String(d.etiqueta||"").trim(),
+    varietales: Array.isArray(d.varietales) ? d.varietales.map(x=>String(x).trim()).filter(Boolean) : [],
+    anada: parseInt(d.anada,10) || null,
+    region: String(d.region||"").trim(),
+    tipo: ["tinto","blanco","rosado","espumante","dulce"].includes(d.tipo) ? d.tipo : "tinto",
+    gama: Object.keys(GAMAS).includes(d.gama) ? d.gama : "reserva",
+    cantidad: 1,
+    precioArs: parseInt(d.precioArs,10) || null,
+    precioFuente: "estimado",
+    ventanaDesde: parseInt(d.ventanaDesde,10) || null,
+    ventanaHasta: parseInt(d.ventanaHasta,10) || null,
+    notas: String(d.notas||"").trim(),
+    fotoId, fotoUrl: fotoFinal,
+    _aviso: `Leído de la etiqueta${conf!=null?` · confianza ${Math.round(conf*100)}%`:""}. El precio es una estimación: revisalo antes de guardar.`
+  };
+  abrirEditor(v, "Revisá lo que leí");
+}
+
+/* ---- ajustes ---- */
+
+function abrirAjustes(){
+  const c = S.cfg;
+  hoja(`
+    <div class="hoja-h"><h2>Ajustes</h2><button class="icon-btn" data-x="1">Cerrar</button></div>
+    <div class="campos">
+      <div class="campo ancho"><label>Cortes de las bandas de costo (ARS)</label></div>
+      <div class="campo"><label for="a-bajo">Bajo hasta</label><input id="a-bajo" class="num" inputmode="numeric" value="${esc(c.bandas.bajo)}"></div>
+      <div class="campo"><label for="a-medio">Medio hasta</label><input id="a-medio" class="num" inputmode="numeric" value="${esc(c.bandas.medio)}"></div>
+      <div class="campo"><label for="a-alto">Alto hasta</label><input id="a-alto" class="num" inputmode="numeric" value="${esc(c.bandas.alto)}"></div>
+      <div class="campo"><label for="a-dolar">Dólar de referencia</label><input id="a-dolar" class="num" inputmode="numeric" value="${esc(c.dolar)}"></div>
+    </div>
+    <p class="nota">Los precios argentinos se mueven rápido. Actualizá el dólar y los cortes cada tanto para que las bandas sigan significando lo mismo.</p>
+    <div class="acciones">
+      <button class="btn pri full" data-g="1">Guardar ajustes</button>
+      <button class="btn" data-csv="1">Exportar CSV</button>
+    </div>
+    <div class="acciones">
+      <button class="btn gh" data-ej="1">Borrar los vinos de ejemplo</button>
+    </div>
+    <p class="nota">Los vinos cargados con ✻ en las notas son ejemplos que dejé para que la app no arrancara vacía.</p>
+  `, el => {
+    el.querySelector("[data-x]").onclick = cerrar;
+    el.querySelector("[data-g]").onclick = async () => {
+      const n = id => parseInt($("#a-"+id).value,10);
+      const nuevo = {bandas:{bajo:n("bajo")||CFG_DEF.bandas.bajo, medio:n("medio")||CFG_DEF.bandas.medio, alto:n("alto")||CFG_DEF.bandas.alto},
+        dolar:n("dolar")||CFG_DEF.dolar, relevado:c.relevado};
+      S.cfg = nuevo;
+      if(S.db){ try{ await S.db.doc("config/app").set(nuevo); }catch(e){} }
+      cerrar(); render(); toast("Ajustes guardados");
+    };
+    el.querySelector("[data-csv]").onclick = exportarCsv;
+    el.querySelector("[data-ej]").onclick = async () => {
+      const ej = S.vinos.filter(v=>v.ejemplo);
+      if(!ej.length){ toast("No quedan ejemplos"); return; }
+      for(const v of ej) await borrar(v.id);
+      cerrar(); toast(`${ej.length} ${plural(ej.length,"ejemplo")} ${plural(ej.length,"borrado")}`);
+    };
+  });
+}
+
+function exportarCsv(){
+  const cab = ["Bodega","Etiqueta","Varietales","Añada","Región","Tipo","Gama","Reserva","Botellas","Precio ARS","Origen precio","Ventana desde","Ventana hasta","Momento","Notas"];
+  const q = s => '"' + String(s==null?"":s).replace(/"/g,'""') + '"';
+  const filas = ordenar(S.vinos,"urgencia").map(v=>{
+    const e = estado(v);
+    return [v.bodega, v.etiqueta, (v.varietales||[]).join(" / "), v.anada, v.region, v.tipo,
+      (GAMAS[v.gama]||{}).n, esReserva(v)?"Sí":"No", cant(v), v.precioArs,
+      v.precioFuente==="estimado"?"Estimado":"Manual",
+      e.w?e.w.desde:"", e.w?e.w.hasta:"", ESTADOS[e.k].n, v.notas].map(q).join(",");
+  });
+  const csv = "﻿" + [cab.map(q).join(",")].concat(filas).join("\r\n");
+  if(S.descargas){
+    S.descargas.save({filename:`cava-${HOY.toISOString().slice(0,10)}.csv`, data:csv})
+      .then(()=>toast("CSV listo")).catch(()=>toast("No se pudo descargar el CSV"));
+  } else {
+    navigator.clipboard?.writeText(csv).then(()=>toast("CSV copiado al portapapeles"))
+      .catch(()=>toast("No pude exportar en este visor"));
+  }
+}
+
+/* ============== persistencia ============== */
+
+function idNuevo(){ return "v" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function limpiar(o){
+  const out = {};
+  for(const k of Object.keys(o)) if(!k.startsWith("_") && o[k] !== undefined) out[k] = o[k];
+  return out;
+}
+
+async function guardar(v){
+  const datos = limpiar(Object.assign({}, v, {actualizado:new Date().toISOString()}));
+  const id = datos.id || idNuevo();
+  datos.id = id;
+  const i = S.vinos.findIndex(x=>x.id===id);
+  if(i >= 0) S.vinos[i] = datos; else S.vinos.push(datos);
+  render();
+  if(S.db){
+    try{ await S.db.collection("vinos").doc(id).set(datos); }
+    catch(e){ toast("Guardado solo en esta pantalla: no pude escribir en la cava compartida"); }
+  }
+}
+
+async function borrar(id){
+  S.vinos = S.vinos.filter(v=>v.id!==id);
+  render();
+  if(S.db){ try{ await S.db.collection("vinos").doc(id).delete(); }catch(e){} }
+}
+
+/* ============== arranque ============== */
+
+$("#nav").addEventListener("click", e => {
+  const b = e.target.closest("button[data-v]");
+  if(!b) return;
+  S.view = b.dataset.v; render();
+  window.scrollTo({top:0, behavior:"instant"});
+});
+$("#fab").onclick = abrirAlta;
+$("#btn-cfg").onclick = abrirAjustes;
+
+document.querySelector("main").addEventListener("click", e => {
+  const ag = e.target.closest("[data-accion='agregar']");
+  if(ag){ abrirAlta(); return; }
+  const f = e.target.closest(".fila");
+  if(f){
+    const v = S.vinos.find(x=>x.id===f.dataset.id);
+    if(v) abrirEditor(v, "Ficha del vino");
+    return;
+  }
+  const r = e.target.closest("[data-res]");
+  if(r){ S.fReserva = r.dataset.res; render(); return; }
+});
+document.querySelector("main").addEventListener("input", e => {
+  if(e.target.id === "f-q"){
+    S.q = e.target.value;
+    const pos = e.target.selectionStart;
+    render();
+    const n = $("#f-q"); if(n){ n.focus(); n.setSelectionRange(pos,pos); }
+  }
+});
+document.querySelector("main").addEventListener("change", e => {
+  if(e.target.id === "f-estado"){ S.fEstado = e.target.value; render(); }
+  if(e.target.id === "f-var"){ S.fVar = e.target.value; render(); }
+  if(e.target.id === "f-orden"){ S.orden = e.target.value; render(); }
+});
+
+render();
+
+(async function(){
+  const c = window.claude;
+  if(!c || !c.use){ S.listo = true; render(); return; }
+
+  const [db, sample, assets, descargas] = await Promise.all([
+    c.use("db").catch(()=>null),
+    c.use("sample").catch(()=>null),
+    c.use("assets").catch(()=>null),
+    c.use("downloads").catch(()=>null)
+  ]);
+  S.db = db; S.sample = sample; S.assets = assets; S.descargas = descargas;
+
+  if(sample){
+    try{ const lim = await sample.limits(); S.puedeImagenes = !!(lim && lim.images); }
+    catch(e){ S.puedeImagenes = false; }
+  }
+
+  if(!db){ S.listo = true; render(); return; }
+
+  try{
+    const snap = await db.doc("config/app").get();
+    if(snap.exists){
+      const d = snap.data();
+      S.cfg = {bandas:Object.assign({}, CFG_DEF.bandas, d.bandas||{}), dolar:d.dolar||CFG_DEF.dolar, relevado:d.relevado||CFG_DEF.relevado};
+    }
+  }catch(e){ /* se queda con los valores por defecto */ }
+
+  db.collection("vinos").onSnapshot(snap => {
+    S.vinos = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
+    S.listo = true;
+    render();
+  }, () => { S.listo = true; render(); });
+})();
+
+})();
+</script>
