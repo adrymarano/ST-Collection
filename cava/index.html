@@ -111,6 +111,9 @@ ul.lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:colu
 .nom .et{font-family:var(--display); font-weight:600}
 .meta{font-size:12.5px; color:var(--ink-2); margin-top:2px; display:flex; flex-wrap:wrap; gap:0 7px}
 .meta .sep{color:var(--line-2)}
+.rasgos{display:flex; flex-wrap:wrap; gap:5px; margin-top:7px}
+.rasgo{font-size:11px; line-height:1.4; padding:2px 7px; border-radius:5px; white-space:nowrap;
+  background:var(--surface-2); color:var(--ink-2); border:1px solid var(--line)}
 .right{text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:5px; white-space:nowrap}
 .precio{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:14px}
 .precio.est::after{content:"≈"; color:var(--muted); margin-left:3px; font-size:11px}
@@ -304,6 +307,39 @@ const GAMAS = {
 };
 const ES_RESERVA = {joven:false, roble:false, reserva:true, granReserva:true, icono:true};
 
+// Características de cata. Van como etiquetas en cada fila, en lugar de la
+// ubicación: la región ocupa media línea y no ayuda a elegir qué abrir.
+const CUERPO = {ligero:"Ligero", medio:"Cuerpo medio", corpulento:"Corpulento"};
+const TANINO = {suave:"Taninos suaves", medio:"Taninos medios", firme:"Taninos firmes"};
+const ACIDEZ = {baja:"Acidez baja", media:"Acidez media", alta:"Acidez alta"};
+
+function rasgosDe(v){
+  const r = [];
+  if(CUERPO[v.cuerpo]) r.push(CUERPO[v.cuerpo]);
+  if(v.tipo === "tinto" ? TANINO[v.tanino] : ACIDEZ[v.acidez])
+    r.push(v.tipo === "tinto" ? TANINO[v.tanino] : ACIDEZ[v.acidez]);
+  if(typeof v.crianzaMeses === "number")
+    r.push(v.crianzaMeses > 0 ? `${v.crianzaMeses} meses de roble` : "Sin madera");
+  const per = (v.perfil||[]).filter(Boolean);
+  if(per.length) r.push(per.slice(0,2).join(" · "));
+  return r;
+}
+
+function limpiarRasgos(d){
+  const en = (x, ok) => ok.indexOf(x) >= 0 ? x : null;
+  const num = x => { const n = parseFloat(x); return isFinite(n) ? n : null; };
+  const meses = num(d.crianzaMeses);
+  return {
+    cuerpo: en(d.cuerpo, ["ligero","medio","corpulento"]),
+    tanino: en(d.tanino, ["suave","medio","firme"]),
+    acidez: en(d.acidez, ["baja","media","alta"]),
+    crianzaMeses: meses === null ? null : Math.max(0, Math.round(meses)),
+    alcohol: num(d.alcohol),
+    perfil: Array.isArray(d.perfil) ? d.perfil.map(x=>String(x).trim()).filter(Boolean).slice(0,4) : [],
+    maridaje: String(d.maridaje||"").trim().slice(0,90)
+  };
+}
+
 // Estar "dentro de la ventana" no alcanza: una cava joven cae entera en ese
 // cajón y no contesta nada. Lo que ordena es cuánto falta para que la ventana
 // se cierre, así que el tramo de adentro se parte en dos.
@@ -485,7 +521,8 @@ function fila(v, opts){
   opts = opts || {};
   const e = estado(v);
   const uvas = (v.varietales||[]).join(" · ");
-  const meta = [uvas, v.anada||"s/añada", v.region, (GAMAS[v.gama]||{}).n].filter(Boolean);
+  const meta = [uvas, v.anada||"s/añada", (GAMAS[v.gama]||{}).n].filter(Boolean);
+  const rr = rasgosDe(v);
   const foto = v.fotoUrl
     ? `<img class="thumb" src="${esc(v.fotoUrl)}" alt="">`
     : `<div class="thumb ph" aria-hidden="true">${esc((v.bodega||"?").trim().charAt(0).toUpperCase())}</div>`;
@@ -494,6 +531,7 @@ function fila(v, opts){
     <div class="mid">
       <div class="nom">${esc(v.bodega||"Sin bodega")} <span class="et">${esc(v.etiqueta||"")}</span></div>
       <div class="meta">${meta.map(m=>esc(m)).join(' <span class="sep">·</span> ')}</div>
+      ${rr.length ? `<div class="rasgos">${rr.map(x=>`<span class="rasgo">${esc(x)}</span>`).join("")}</div>` : ""}
       ${opts.sinLinea ? "" : lineaGuarda(v)}
     </div>
     <div class="right">
@@ -719,6 +757,8 @@ function renderNumeros(){
   <div class="tarjeta"><h3>Por varietal</h3>${barras(uvas, botellas)}</div>
   <div class="tarjeta"><h3>Por añada</h3>${barras(anadas, botellas)}</div>
   <div class="tarjeta"><h3>Por gama</h3>${barras(gamas, botellas)}</div>
+  <div class="tarjeta"><h3>Por cuerpo</h3>${barras(cuenta(S.vinos, v=>CUERPO[v.cuerpo]), botellas)}</div>
+  <div class="tarjeta"><h3>Por perfil aromático</h3>${barras(cuenta(S.vinos, v=>v.perfil||[]).slice(0,12), botellas)}</div>
   <div class="tarjeta"><h3>Por región</h3>${barras(regiones, botellas)}</div>
   <div class="tarjeta"><h3>Por tipo</h3>${barras(tipos, botellas)}</div>`;
 }
@@ -803,6 +843,13 @@ function formHtml(v){
     <div class="campo"><label for="c-precio">Precio (ARS)</label><input id="c-precio" class="num" inputmode="numeric" value="${esc(v.precioArs||"")}"></div>
     <div class="campo"><label for="c-vd">Ventana desde</label><input id="c-vd" class="num" inputmode="numeric" value="${esc(v.ventanaDesde||"")}" placeholder="auto"></div>
     <div class="campo"><label for="c-vh">Ventana hasta</label><input id="c-vh" class="num" inputmode="numeric" value="${esc(v.ventanaHasta||"")}" placeholder="auto"></div>
+    <div class="campo"><label for="c-cuerpo">Cuerpo</label><select id="c-cuerpo">${sel([["","—"]].concat(Object.keys(CUERPO).map(k=>[k,CUERPO[k]])), v.cuerpo||"")}</select></div>
+    <div class="campo"><label for="c-tanino">Taninos</label><select id="c-tanino">${sel([["","—"]].concat(Object.keys(TANINO).map(k=>[k,TANINO[k]])), v.tanino||"")}</select></div>
+    <div class="campo"><label for="c-acidez">Acidez</label><select id="c-acidez">${sel([["","—"]].concat(Object.keys(ACIDEZ).map(k=>[k,ACIDEZ[k]])), v.acidez||"")}</select></div>
+    <div class="campo"><label for="c-crianza">Roble (meses)</label><input id="c-crianza" class="num" inputmode="numeric" value="${esc(v.crianzaMeses!=null?v.crianzaMeses:"")}" placeholder="0 = sin madera"></div>
+    <div class="campo"><label for="c-alcohol">Alcohol (%)</label><input id="c-alcohol" class="num" inputmode="decimal" value="${esc(v.alcohol!=null?v.alcohol:"")}" placeholder="14,5"></div>
+    <div class="campo ancho"><label for="c-perfil">Perfil aromático (separado por coma)</label><input id="c-perfil" value="${esc((v.perfil||[]).join(", "))}" placeholder="ciruela, violetas, vainilla"></div>
+    <div class="campo ancho"><label for="c-maridaje">Maridaje</label><input id="c-maridaje" value="${esc(v.maridaje||"")}" placeholder="Carnes rojas a la parrilla"></div>
     <div class="campo ancho"><label for="c-notas">Notas</label><textarea id="c-notas" placeholder="Dónde lo compraste, con qué lo tomarías…">${esc(v.notas||"")}</textarea></div>
   </div>`;
 }
@@ -815,7 +862,12 @@ function leerForm(base){
     varietales:g("var").split(",").map(s=>s.trim()).filter(Boolean),
     anada:n("anada"), region:g("region"), tipo:g("tipo"), gama:g("gama"),
     cantidad:Math.max(0, n("cant")||0), notas:g("notas"),
-    ventanaDesde:n("vd"), ventanaHasta:n("vh")
+    ventanaDesde:n("vd"), ventanaHasta:n("vh"),
+    cuerpo:g("cuerpo")||null, tanino:g("tanino")||null, acidez:g("acidez")||null,
+    crianzaMeses: g("crianza")==="" ? null : Math.max(0, n("crianza")||0),
+    alcohol: g("alcohol")==="" ? null : (parseFloat(g("alcohol").replace(",",".")) || null),
+    perfil: g("perfil").split(",").map(s=>s.trim()).filter(Boolean).slice(0,4),
+    maridaje: g("maridaje")
   });
   const p = n("precio");
   if(p !== (base.precioArs ?? null)) out.precioFuente = "manual";
@@ -988,7 +1040,7 @@ function achicar(file, lado){
 const PROMPT = `Sos sommelier y trabajás con vinos argentinos. En la imagen hay la etiqueta de una botella.
 
 Leé la etiqueta y devolvé SOLO un objeto JSON con estas claves exactas:
-{"legible":true,"bodega":"","etiqueta":"","varietales":["Malbec"],"anada":2019,"region":"","tipo":"tinto","gama":"reserva","precioArs":25000,"ventanaDesde":2022,"ventanaHasta":2029,"notas":"","confianza":0.8}
+{"legible":true,"bodega":"","etiqueta":"","varietales":["Malbec"],"anada":2019,"region":"","tipo":"tinto","gama":"reserva","precioArs":25000,"ventanaDesde":2022,"ventanaHasta":2029,"cuerpo":"medio","tanino":"firme","acidez":"media","crianzaMeses":12,"alcohol":14.5,"perfil":["ciruela","violetas","vainilla"],"maridaje":"","notas":"","confianza":0.8}
 
 Reglas:
 - "legible": false si la foto no es una etiqueta de vino o no se lee nada. En ese caso dejá el resto vacío o en null.
@@ -998,6 +1050,11 @@ Reglas:
 - "gama": uno de joven, roble, reserva, granReserva, icono. Usá lo que diga la etiqueta y lo que sepas de esa línea de esa bodega. "joven" para vinos sin paso por madera.
 - "precioArs": precio minorista aproximado de una botella de 750 ml en una vinoteca argentina HOY, en pesos argentinos, como número entero sin separadores. Calibralo con estas referencias relevadas en octubre de 2026: ANCLAS_AQUI. Dólar libre de referencia: DOLAR_AQUI pesos. No uses precios de otros años ni de otros países: los precios argentinos en pesos suben todos los años.
 - "ventanaDesde" y "ventanaHasta": años calendario entre los que ese vino se toma en su mejor momento, contando desde la cosecha y según su gama real.
+- "cuerpo": ligero, medio o corpulento. "tanino": suave, medio o firme, o null en blancos y rosados. "acidez": baja, media o alta.
+- "crianzaMeses": meses de crianza en roble, entero. 0 si no pasó por madera, null si no sabés.
+- "alcohol": grado alcohólico aproximado, con un decimal.
+- "perfil": de dos a cuatro descriptores aromáticos en español, una palabra cada uno.
+- "maridaje": una línea corta, menos de 60 caracteres.
 - "notas": una sola línea, menos de 120 caracteres, con lo más útil para decidir cuándo abrirlo.
 - "confianza": 0 a 1, qué tan seguro estás de lo que leíste.
 No agregues texto fuera del JSON.`;
@@ -1065,7 +1122,7 @@ async function leerEtiqueta(file){
   }
 
   const conf = typeof d.confianza === "number" ? d.confianza : null;
-  const v = {
+  const v = Object.assign(limpiarRasgos(d), {
     bodega: String(d.bodega||"").trim(),
     etiqueta: String(d.etiqueta||"").trim(),
     varietales: Array.isArray(d.varietales) ? d.varietales.map(x=>String(x).trim()).filter(Boolean) : [],
@@ -1080,12 +1137,69 @@ async function leerEtiqueta(file){
     ventanaHasta: parseInt(d.ventanaHasta,10) || null,
     notas: String(d.notas||"").trim(),
     fotoId, fotoUrl: fotoFinal,
-    _aviso: `Leído de la etiqueta${conf!=null?` · confianza ${Math.round(conf*100)}%`:""}. El precio es una estimación: revisalo antes de guardar.`
-  };
+    _aviso: `Leído de la etiqueta${conf!=null?` · confianza ${Math.round(conf*100)}%`:""}. El precio y las características son estimaciones: revisalas antes de guardar.`
+  });
   abrirEditor(v, "Revisá lo que leí");
 }
 
 /* ---- ajustes ---- */
+
+// Los vinos cargados antes de que existieran estos campos no tienen cata.
+// Una sola consulta para todos en vez de una por vino: más rápido y más barato.
+async function completarRasgos(){
+  if(!S.sample){ toast("Claude no está disponible en este visor"); return; }
+  const faltan = S.vinos.filter(v=>!v.cuerpo);
+  if(!faltan.length){ toast("Ya tienen características todos los vinos"); return; }
+
+  const ctl = new AbortController();
+  hoja(`<div class="hoja-h"><h2>Completar características</h2></div>
+    <div class="estado-msg" id="paso"><span class="cargando"></span>Preguntando por ${faltan.length} ${plural(faltan.length,"vino")}…</div>
+    <div class="acciones"><button class="btn gh" data-stop="1">Cancelar</button></div>`,
+    el => { el.querySelector("[data-stop]").onclick = () => { ctl.abort(); cerrar(); }; });
+
+  const lista = faltan.map((v,i)=>`${i+1}. ${v.bodega||""} ${v.etiqueta||""} ${v.anada||"sin añada"} — ${(v.varietales||[]).join("/")||"sin varietal"} — ${v.region||"sin región"} — ${(GAMAS[v.gama]||{}).n||""}`).join("\n");
+  const prompt = `Sos sommelier y conocés los vinos argentinos. Para cada vino de esta lista devolvé sus características de cata.
+
+${lista}
+
+Devolvé SOLO un array JSON, un objeto por vino, en el mismo orden y con el mismo "n":
+[{"n":1,"cuerpo":"medio","tanino":"firme","acidez":"media","crianzaMeses":12,"alcohol":14.5,"perfil":["ciruela","violetas","vainilla"],"maridaje":"Carnes rojas a la parrilla"}]
+
+Reglas:
+- "cuerpo": ligero, medio o corpulento. "tanino": suave, medio o firme, o null si es blanco o rosado. "acidez": baja, media o alta.
+- "crianzaMeses": meses en roble, entero. 0 si no pasó por madera, null si no sabés.
+- "alcohol": grado aproximado, con un decimal.
+- "perfil": de dos a cuatro descriptores aromáticos en español, una palabra cada uno.
+- "maridaje": una línea corta, menos de 60 caracteres.
+Si no conocés un vino en particular, deducí por varietal, región y gama. No dejes ninguno afuera.`;
+
+  let arr;
+  try{
+    arr = await S.sample.json(prompt, {modelTier:"complex", signal:ctl.signal, cache:false});
+  }catch(e){
+    if(e && e.code === "cancelled") return;
+    const p = document.querySelector("#paso");
+    if(p){ p.className = "estado-msg err"; p.textContent = "No pude completarlas. Probá de nuevo en un rato."; }
+    return;
+  }
+  if(!Array.isArray(arr)){
+    const p = document.querySelector("#paso");
+    if(p){ p.className = "estado-msg err"; p.textContent = "La respuesta vino con otra forma. Probá de nuevo."; }
+    return;
+  }
+
+  const p = document.querySelector("#paso");
+  if(p) p.innerHTML = `<span class="cargando"></span>Guardando…`;
+  let n = 0;
+  for(const d of arr){
+    const v = faltan[(parseInt(d && d.n, 10) || 0) - 1];
+    if(!v) continue;
+    await guardar(Object.assign({}, v, limpiarRasgos(d)));
+    n++;
+  }
+  cerrar();
+  toast(n ? `${n} ${plural(n,"vino")} ${plural(n,"completado")}` : "No se completó ninguno");
+}
 
 function abrirAjustes(){
   const c = S.cfg;
@@ -1105,8 +1219,10 @@ function abrirAjustes(){
       <button class="btn" data-csv="1">Exportar CSV</button>
     </div>
     <div class="acciones">
+      <button class="btn" data-rasgos="1">Completar características de cata</button>
       <button class="btn gh" data-ej="1">Borrar los vinos de ejemplo</button>
     </div>
+    <p class="nota">Cuerpo, taninos, roble y perfil aromático de los vinos que todavía no los tienen, en una sola consulta. Son estimaciones: se editan en la ficha de cada uno.</p>
     <p class="nota">Los vinos cargados con ✻ en las notas son ejemplos que dejé para que la app no arrancara vacía.</p>
   `, el => {
     el.querySelector("[data-x]").onclick = cerrar;
@@ -1119,6 +1235,7 @@ function abrirAjustes(){
       cerrar(); render(); toast("Ajustes guardados");
     };
     el.querySelector("[data-csv]").onclick = exportarCsv;
+    el.querySelector("[data-rasgos]").onclick = completarRasgos;
     el.querySelector("[data-ej]").onclick = async () => {
       const ej = S.vinos.filter(v=>v.ejemplo);
       if(!ej.length){ toast("No quedan ejemplos"); return; }
@@ -1129,14 +1246,17 @@ function abrirAjustes(){
 }
 
 function exportarCsv(){
-  const cab = ["Bodega","Etiqueta","Varietales","Añada","Región","Tipo","Gama","Reserva","Botellas","Precio ARS","Origen precio","Ventana desde","Ventana hasta","Momento","Notas"];
+  const cab = ["Bodega","Etiqueta","Varietales","Añada","Región","Tipo","Gama","Reserva","Botellas","Precio ARS","Origen precio","Ventana desde","Ventana hasta","Momento","Cuerpo","Taninos","Acidez","Roble (meses)","Alcohol","Perfil","Maridaje","Notas"];
   const q = s => '"' + String(s==null?"":s).replace(/"/g,'""') + '"';
   const filas = ordenar(S.vinos,"urgencia").map(v=>{
     const e = estado(v);
     return [v.bodega, v.etiqueta, (v.varietales||[]).join(" / "), v.anada, v.region, v.tipo,
       (GAMAS[v.gama]||{}).n, esReserva(v)?"Sí":"No", cant(v), v.precioArs,
       v.precioFuente==="estimado"?"Estimado":"Manual",
-      e.w?e.w.desde:"", e.w?e.w.hasta:"", ESTADOS[e.k].n, v.notas].map(q).join(",");
+      e.w?e.w.desde:"", e.w?e.w.hasta:"", ESTADOS[e.k].n,
+      CUERPO[v.cuerpo]||"", TANINO[v.tanino]||"", ACIDEZ[v.acidez]||"",
+      v.crianzaMeses!=null?v.crianzaMeses:"", v.alcohol!=null?v.alcohol:"",
+      (v.perfil||[]).join(" / "), v.maridaje, v.notas].map(q).join(",");
   });
   const csv = "﻿" + [cab.map(q).join(",")].concat(filas).join("\r\n");
   if(S.descargas){
