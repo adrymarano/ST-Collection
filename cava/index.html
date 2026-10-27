@@ -72,6 +72,10 @@ main{max-width:960px; margin:0 auto; padding-block:20px 96px;
   padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px))}
 section[hidden]{display:none !important}
 .lede{color:var(--ink-2); font-size:14px; margin:0 0 16px; max-width:62ch}
+#aviso{background:var(--anio-bg); border:1px solid var(--anio); border-radius:var(--r);
+  padding:12px 14px; margin-bottom:18px; font-size:13.5px; line-height:1.5; color:var(--ink)}
+#aviso strong{color:var(--anio)}
+#aviso .diag{display:block; font-family:var(--mono); font-size:12px; margin-top:6px; color:var(--ink-2)}
 
 .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:22px}
 .tile{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; min-width:0}
@@ -190,8 +194,8 @@ ul.lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:colu
 .opcion{display:flex; gap:13px; align-items:center; text-align:left; background:var(--bg);
   border:1px solid var(--line-2); border-radius:12px; padding:14px 15px; width:100%}
 .opcion .em{font-family:var(--display); font-size:22px; color:var(--accent); width:28px; text-align:center; flex:none}
-.opcion .tt{font-weight:600; font-size:15px}
-.opcion .ds{font-size:12.5px; color:var(--muted); margin-top:1px}
+.opcion .tt{display:block; font-weight:600; font-size:15px}
+.opcion .ds{display:block; font-size:12.5px; color:var(--muted); margin-top:2px}
 .preview{width:100%; max-height:230px; object-fit:contain; border-radius:10px; background:var(--surface-2)}
 .foto-caja{display:flex; flex-direction:column; gap:9px; margin-bottom:15px}
 .foto-vista{min-width:0}
@@ -243,6 +247,7 @@ ul.lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:colu
 </header>
 
 <main>
+  <div id="aviso" role="status" hidden></div>
   <section id="v-tomar"></section>
   <section id="v-cava" hidden></section>
   <section id="v-precios" hidden></section>
@@ -655,11 +660,34 @@ function renderNumeros(){
   <div class="tarjeta"><h3>Por tipo</h3>${barras(tipos, botellas)}</div>`;
 }
 
+// Algunos visores (la app de Claude para Android, entre otros) no sirven estas
+// capacidades ni abren el selector de archivos. Si falta alguna hay que decirlo:
+// una cava que aparece vacía porque no conectó la base engaña más que un error.
+const CAPS = [
+  {k:"db",    n:"guardar los vinos",  f:()=>!!S.db},
+  {k:"fotos", n:"guardar fotos",      f:()=>!!S.assets},
+  {k:"claude",n:"preguntarle a Claude",f:()=>!!S.sample},
+  {k:"ocr",   n:"leer etiquetas por foto", f:()=>!!S.puedeImagenes}
+];
+
+function pintarAviso(){
+  const av = $("#aviso");
+  if(!av) return;
+  const falta = CAPS.filter(c=>!c.f());
+  if(!S.listo || !falta.length){ av.hidden = true; return; }
+  av.hidden = false;
+  av.innerHTML = `<strong>Este visor no te deja ${falta.map(c=>esc(c.n)).join(", ni ")}.</strong>
+    Si estás viendo la app adentro de la app de Claude para Android, abrila en Chrome con el mismo link
+    y agregala ahí a la pantalla principal: Chrome sí abre la cámara y guarda los datos.
+    <span class="diag">${CAPS.map(c=>`${c.k}: ${c.f()?"sí":"NO"}`).join(" · ")}</span>`;
+}
+
 function render(){
   const botellas = S.vinos.reduce((s,v)=>s+cant(v),0);
   $("#resumen-head").textContent = S.listo
     ? `${botellas} ${plural(botellas,"botella")} · ${S.vinos.length} ${plural(S.vinos.length,"etiqueta")}`
     : "cargando…";
+  pintarAviso();
   for(const v of ["tomar","cava","precios","numeros"]) $("#v-"+v).hidden = (v !== S.view);
   for(const b of document.querySelectorAll("#nav button")) b.setAttribute("aria-current", String(b.dataset.v === S.view));
   ({tomar:renderTomar, cava:renderCava, precios:renderPrecios, numeros:renderNumeros})[S.view]();
