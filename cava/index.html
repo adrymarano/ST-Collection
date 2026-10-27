@@ -199,6 +199,15 @@ ul.lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:colu
   border:1px dashed var(--line-2); border-radius:10px; background:var(--bg); color:var(--muted); font-size:13px}
 .foto-vacia .em{font-family:var(--display); font-size:21px; color:var(--line-2); line-height:1}
 .foto-btns{display:flex; gap:8px; flex-wrap:wrap}
+/* El input de archivo va encima del botón, transparente: así el toque cae sobre
+   el input de verdad y no depende de un .click() por JS, que algunos visores de
+   Android ignoran sin avisar. */
+.arch{position:relative; overflow:hidden; cursor:pointer}
+.btn.arch{display:inline-flex; align-items:center; justify-content:center}
+.arch input[type=file]{position:absolute; inset:0; width:100%; height:100%; opacity:0; font-size:0; cursor:pointer}
+.arch:focus-within{outline:2px solid var(--accent); outline-offset:2px}
+.arch.off{opacity:.55; cursor:not-allowed}
+.arch.off input[type=file]{cursor:not-allowed}
 .estado-msg{font-size:13.5px; color:var(--ink-2); padding:10px 12px; background:var(--surface-2); border-radius:8px; margin-bottom:12px}
 .estado-msg.err{color:var(--ya); background:var(--ya-bg)}
 .nota{font-size:12px; color:var(--muted); margin-top:10px}
@@ -731,31 +740,32 @@ function montarFoto(el, foto){
   if(!caja) return;
   const inp = caja.querySelector("input[type=file]");
   const bAdd = caja.querySelector("[data-foto]");
+  const txt = bAdd.querySelector(".txt");
   const bDel = caja.querySelector("[data-qfoto]");
   const pintar = () => {
     caja.querySelector(".foto-vista").innerHTML = foto.fotoUrl
       ? `<img class="preview" src="${esc(foto.fotoUrl)}" alt="Foto del vino">`
       : `<div class="foto-vacia"><span class="em">◉</span><span>Sin foto todavía</span></div>`;
     bDel.hidden = !foto.fotoUrl;
-    bAdd.disabled = !S.assets;
-    bAdd.textContent = !S.assets ? "No puedo guardar fotos acá"
-      : (foto.fotoUrl ? "Cambiar foto" : "Sacar o elegir foto");
+    inp.disabled = !S.assets;
+    bAdd.classList.toggle("off", !S.assets);
+    txt.textContent = !S.assets ? "No puedo guardar fotos acá"
+      : (foto.fotoUrl ? "Cambiar foto" : "Agregar foto");
   };
   pintar();
-  bAdd.onclick = () => { if(S.assets) inp.click(); };
   inp.onchange = async () => {
     const f = inp.files && inp.files[0];
     if(!f || !S.assets) return;
-    bAdd.disabled = true;
-    bAdd.innerHTML = `<span class="cargando"></span>Subiendo…`;
+    inp.disabled = true;
+    txt.innerHTML = `<span class="cargando"></span>Subiendo…`;
     try{
       const chico = await achicar(f, 900);
       const up = await S.assets.upload(chico);
       const viejo = foto.fotoId;
       foto.fotoId = up.id; foto.fotoUrl = up.url;
       if(viejo && viejo !== up.id) S.assets.delete(viejo).catch(()=>{});
-    }catch(e){ toast("No pude subir esa foto"); }
-    finally{ inp.value = ""; pintar(); }
+    }catch(e){ toast("No pude subir esa foto. Probá con un JPG o PNG."); }
+    finally{ inp.value = ""; inp.disabled = false; pintar(); }
   };
   bDel.onclick = () => {
     const viejo = foto.fotoId;
@@ -773,10 +783,9 @@ function abrirEditor(v, titulo){
     <div class="foto-caja">
       <div class="foto-vista"></div>
       <div class="foto-btns">
-        <button class="btn" data-foto="1">Sacar o elegir foto</button>
+        <label class="btn arch" data-foto="1"><span class="txt">Agregar foto</span><input type="file" accept="image/*"></label>
         <button class="btn gh" data-qfoto="1" hidden>Quitar foto</button>
       </div>
-      <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
     </div>
     ${v._aviso?`<div class="estado-msg">${esc(v._aviso)}</div>`:""}
     ${formHtml(v)}
@@ -829,26 +838,31 @@ function abrirAlta(){
   hoja(`
     <div class="hoja-h"><h2>Agregar vino</h2><button class="icon-btn" data-x="1">Cerrar</button></div>
     <div class="opciones">
-      <button class="opcion" data-foto="1" ${S.puedeImagenes?"":"disabled"}>
+      ${S.puedeImagenes ? `
+      <label class="opcion arch" data-foto="1">
         <span class="em">◉</span>
         <span><span class="tt">Sacarle una foto a la etiqueta</span>
-        <span class="ds">${S.puedeImagenes?"Leo bodega, varietal, añada y región, y estimo precio y ventana de guarda.":"No disponible en esta sesión: cargalo a mano."}</span></span>
-      </button>
+        <span class="ds">Leo bodega, varietal, añada y región, y estimo precio y ventana de guarda.</span></span>
+        <input type="file" accept="image/*">
+      </label>` : `
+      <button class="opcion" data-sinfoto="1">
+        <span class="em">◉</span>
+        <span><span class="tt">Sacarle una foto a la etiqueta</span>
+        <span class="ds">La lectura automática no está disponible en este visor. Te abro la carga manual, donde igual podés ponerle la foto.</span></span>
+      </button>`}
       <button class="opcion" data-manual="1">
         <span class="em">✎</span>
         <span><span class="tt">Cargarlo a mano</span><span class="ds">Doce campos, todos opcionales menos el nombre.</span></span>
       </button>
     </div>
-    <input type="file" id="file-in" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
   `, el => {
+    const manual = () => abrirEditor({cantidad:1, tipo:"tinto", gama:"reserva"}, "Vino nuevo");
     el.querySelector("[data-x]").onclick = cerrar;
-    el.querySelector("[data-manual]").onclick = () => abrirEditor({cantidad:1, tipo:"tinto", gama:"reserva"}, "Vino nuevo");
-    const f = el.querySelector("[data-foto]");
-    const inp = el.querySelector("#file-in");
-    if(S.puedeImagenes){
-      f.onclick = () => inp.click();
-      inp.onchange = () => { if(inp.files && inp.files[0]) leerEtiqueta(inp.files[0]); };
-    }
+    el.querySelector("[data-manual]").onclick = manual;
+    const sin = el.querySelector("[data-sinfoto]");
+    if(sin) sin.onclick = manual;
+    const inp = el.querySelector(".opcion input[type=file]");
+    if(inp) inp.onchange = () => { if(inp.files && inp.files[0]) leerEtiqueta(inp.files[0]); };
   });
 }
 
@@ -983,6 +997,7 @@ function abrirAjustes(){
       <div class="campo"><label for="a-dolar">Dólar de referencia</label><input id="a-dolar" class="num" inputmode="numeric" value="${esc(c.dolar)}"></div>
     </div>
     <p class="nota">Los precios argentinos se mueven rápido. Actualizá el dólar y los cortes cada tanto para que las bandas sigan significando lo mismo.</p>
+    <p class="nota">Qué puede hacer la app en este visor — base de datos: <strong>${S.db?"sí":"no"}</strong> · guardar fotos: <strong>${S.assets?"sí":"no"}</strong> · preguntarle a Claude: <strong>${S.sample?"sí":"no"}</strong> · leer etiquetas por foto: <strong>${S.puedeImagenes?"sí":"no"}</strong>. Si algo dice "no", esa parte queda desactivada en este dispositivo.</p>
     <div class="acciones">
       <button class="btn pri full" data-g="1">Guardar ajustes</button>
       <button class="btn" data-csv="1">Exportar CSV</button>
